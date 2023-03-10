@@ -1,0 +1,36 @@
+*,
+::after,
+::before {
+    box-sizing: border-box;
+}
+
+body, html, #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-flow: column;
+}
+
+label {
+    font-family: "Source Sans Pro", sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
+    text-size-adjust: 100%;
+    font-size: 14px;
+    color: rgb(49, 51, 63);
+    margin-bottom: 0.5rem;
+    /* height: auto; */
+    min-height: 1.5rem;
+    vertical-align: middle;
+    /* display: flex; */
+    /* flex-direction: row; */
+    -webkit-box-align: center;
+    align-items: center;
+    flex: 0 1 auto;
+}
+
+div#root > div {
+    flex: 1 1 auto;
+}

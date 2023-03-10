@@ -1,0 +1,45 @@
+{
+  "name": "ymap_component",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@pbe/react-yandex-maps": "^1.2.2",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-scripts": "^4.0.3",
+    "streamlit-component-lib": "^1.4.0"
+  },
+  "scripts": {
+    "start": "DISABLE_ESLINT_PLUGIN=true react-scripts start",
+    "watch": "DISABLE_ESLINT_PLUGIN=true npm-watch",
+    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "watch": {
+    "start": {
+      "pattern": [
+        "src"
+      ]
+    }
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "homepage": ".",
+  "devDependencies": {
+    "npm-watch": "^0.11.0"
+  }
+}
