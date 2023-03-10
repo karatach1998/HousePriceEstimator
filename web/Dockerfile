@@ -38,4 +38,4 @@ EXPOSE 80
 
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
-CMD ["poetry", "run", "streamlit", "run", "/app/web/main.py", "--theme.base=light", "--theme.primaryColor=#81c44b", "--server.headless=true", "--server.port=80", "--server.address=0.0.0.0"]
+CMD ["poetry", "run", "streamlit", "run", "/app/web/main.py", "--theme.base=light", "--theme.primaryColor=#81c44b", "--browser.gatherUsageStats=false", "--server.headless=true", "--server.port=80", "--server.address=0.0.0.0"]
