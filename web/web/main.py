@@ -13,6 +13,10 @@ from utils.streamlit_pills import pills
 from utils.ymap_component import ymap_component
 
 
+st.set_page_config(
+    page_icon="./static/favicon.ico",
+)
+
 is_new = lambda: 'appartment_type' not in st.session_state or st.session_state.appartment_type != 0
 
 LABELS = {
