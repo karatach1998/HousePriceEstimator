@@ -33,6 +33,5 @@ jobs:
           namespace: 'default'
           chart: './charts/housepriceestimator'
           token: '${{ github.token }}'
-          values: {}
         env:
           KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'
