@@ -3,14 +3,11 @@ kind: Service
 metadata:
   name: model-server
 spec:
-  type: NodePort
-  externalIPs:
-    - 62.76.93.134
+  type: ClusterIP
   selector:
     app: model-server
   ports:
     - port: 80
       targetPort: http
-      nodePort: 32080
       protocol: TCP
       name: http
