@@ -22,17 +22,17 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/model-server:latest
             ghcr.io/${{ github.repository_owner }}/model-server:${{ github.sha }}
   
-  # deploy-to-k8s:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v1
-  #     - name: Helm Deploy
-  #       uses: vimeda/helm@v1.6.8
-  #       with:
-  #         release: ''
-  #         namespace: 'default'
-  #         chart: 'charts/housepriceestimator'
-  #         token: '${{ github.token }}'
-  #         values: {}
-  #       env:
-  #         KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'
+  deploy-to-k8s:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Helm Deploy
+        uses: vimeda/helm@v1.6.8
+        with:
+          release: 'housepriceestimator'
+          namespace: 'default'
+          chart: './charts/housepriceestimator'
+          token: '${{ github.token }}'
+          values: {}
+        env:
+          KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'
