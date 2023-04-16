@@ -15,7 +15,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
-          context: model_server
+          context: ./model_server
           push: true
           tags: karatach1998/model-server:latest
   
