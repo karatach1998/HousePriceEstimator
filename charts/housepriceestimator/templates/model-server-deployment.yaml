@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model_server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: model_server
+  template:
+    metadata:
+      labels:
+        app: model_server
+    spec:
+      containers:
+        - name: model_server
+          image: ghcr.io/karatach1998/model-server:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
