@@ -2,12 +2,9 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: http-ingress
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   rules:
-    - host: 62.76.93.134
-      http:
+    - http:
         paths:
           - path: /
             pathType: Prefix
@@ -15,4 +12,4 @@ spec:
               service:
                 name: model-server
                 port:
-                  number: 16080
+                  number: 80
