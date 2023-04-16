@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "model-server"
+version = "0.1.0"
+description = ""
+authors = ["Sergey Karatach <karatach1998@yandex.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = {extras = ["all"], version = "^0.94.0"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
