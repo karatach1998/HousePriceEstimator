@@ -4,11 +4,10 @@ metadata:
   name: model_server
 spec:
   type: ClusterIP
+  selector:
+    app: model_server
   ports:
     - port: 80
       targetPort: http
       protocol: TCP
       name: http
-  selector:
-    matchLabels:
-      app: model_server
