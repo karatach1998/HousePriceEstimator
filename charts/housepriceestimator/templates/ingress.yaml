@@ -10,6 +10,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: model_server
+                name: model-server
                 port:
                   number: 80
