@@ -17,9 +17,7 @@ jobs:
         with:
           context: model_server
           push: true
-          tags:
-            - karatach1998/model-server:latest
-            - karatach1998/model-server:${{ github.sha }}
+          tags: karatach1998/model-server:latest
   
   # deploy-to-k8s:
   #   runs-on: ubuntu-latest
