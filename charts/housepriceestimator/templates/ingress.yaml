@@ -4,7 +4,7 @@ metadata:
   name: http-ingress
   annotations:
     kubernetes.io/ingress.class: public
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
     - http:
@@ -15,4 +15,4 @@ spec:
               service:
                 name: model-server
                 port:
-                  number: 80
+                  number: 8080

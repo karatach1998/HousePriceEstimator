@@ -7,7 +7,7 @@ spec:
   selector:
     app: model-server
   ports:
-    - port: 80
-      targetPort: http
+    - port: 8080
+      targetPort: 8100
       protocol: TCP
       name: http

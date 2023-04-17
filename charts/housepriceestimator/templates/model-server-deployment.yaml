@@ -16,8 +16,6 @@ spec:
         - name: model-server
           image: ghcr.io/karatach1998/model-server:latest
           imagePullPolicy: Always
-          command: ["poetry", "run", "uvicorn", "model_server.main:app", "--port=8100"]
           ports:
-            - name: http
-              containerPort: 8100
+            - containerPort: 8100
               protocol: TCP
