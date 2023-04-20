@@ -19,7 +19,7 @@ spec:
           command: ["poetry", "run", "uvicorn", "model_server.main:app", "--host=0.0.0.0", "--port=8100"]
           env:
             - name: CLICKHOUSE_HOST
-              value: {{ include 'common.names.fullname' . | quote }}
+              value: {{ include "common.names.fullname" . | quote }}
             - name: CLICKHOUSE_USERNAME
               value: {{ .Values.clickhouse.auth.username | quote }}
             - name: CLICKHOUSE_PASSWORD
