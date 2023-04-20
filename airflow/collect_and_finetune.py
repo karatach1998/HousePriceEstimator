@@ -195,8 +195,8 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         },
     )
 
-    tasks_queue_empty = RabbitMQEmptySensor("tasks")
-    sales_infos_queue_empty = RabbitMQEmptySensor("sales_infos")
+    tasks_queue_empty = RabbitMQEmptySensor(queue_name="tasks")
+    sales_infos_queue_empty = RabbitMQEmptySensor(queue_name="sales_infos")
 
     @task
     def finetune_model():
