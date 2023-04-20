@@ -31,5 +31,5 @@ dependencies:
     version: "11.13.0"
     repository: https://charts.bitnami.com/bitnami
   - name: airflow
-    version: "2.5"
+    version: "8.7.0"
     repository: https://airflow-helm.github.io/charts
