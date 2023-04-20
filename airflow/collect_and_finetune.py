@@ -146,7 +146,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         core_api.create_namespaced_pod(body=selenium_hub_pod, namespace=kube_namespace)
         core_api.create_namespaced_service(body=selenium_hub_service, namespace=kube_namespace)
         w = watch.Watch()
-        for event in w.stream(core_api.list_namespaced_pods, label_selector="app=selenium-hub", namespace=kube_namespace):
+        for event in w.stream(core_api.list_namespaced_pod, label_selector="app=selenium-hub", namespace=kube_namespace):
             if any(c.type == "Ready" and c.status == "True" for c in event["object"].status.conditions):
                 break
         else:
