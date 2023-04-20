@@ -58,6 +58,7 @@ jobs:
           release: 'housepriceestimator'
           namespace: 'default'
           chart: './charts/housepriceestimator'
+          timeout: '15m0s'
           token: '${{ github.token }}'
           secrets: '${{ toJSON(secrets) }}'
           values: |
