@@ -10,3 +10,31 @@ clickhouse:
 rabbitmq:
   auth:
     existingPasswordSecret: credentials
+
+airflow:
+  airflow:
+    connections:
+      - id: kubernetes_default
+        in_cluster: true
+      - id: rabbitmq
+        type: amqp
+        host: ${RABBITMQ_SERVICE_HOST}
+        port: 5672
+        login: user
+        password: ${RABBITMQ_PASSWORD}
+    connectionsTemplates:
+      RABBITMQ_PASSWORD:
+        kind: secret
+        name: credentials
+        key: rabbitmq-password
+    extraPipPackages:
+      - "airflow-provider-rabbitmq"
+      - "requests"
+  dags:
+    gitSync:
+      enabled: true
+      repo: "https://github.com/karatach1998/HousePriceEstimator.git"
+      branch: master
+      revision: "HEAD"
+      repoSubPath: "airflow"
+      syncWait: 60
