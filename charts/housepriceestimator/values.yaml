@@ -1,6 +1,7 @@
 secrets:
   CLICKHOUSE_PASSWORD: ""
   RABBITMQ_PASSWORD: ""
+  RABBITMQ_ERLANG_COOKIE: ""
 
 clickhouse:
   auth:
@@ -10,6 +11,7 @@ clickhouse:
 rabbitmq:
   auth:
     existingPasswordSecret: credentials
+    existingErlangSecret: credentials
 
 airflow:
   airflow:
