@@ -16,6 +16,7 @@ selenium_hub_pod = (
         spec=k8s.V1PodSpec(
             containers=[
                 k8s.V1Container(
+                    name="hub",
                     image="selenium/hub:4.8",
                     image_pull_policy="IfNotPresent",
                     ports=[
@@ -61,6 +62,7 @@ selenium_node_deployment = (
                 spec=k8s.V1PodSpec(
                     containers=[
                         k8s.V1Container(
+                            name="node",
                             image="selenium/node-chrome:4.8",
                             image_pull_policy="IfNotPresent",
                             env=[
