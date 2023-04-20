@@ -19,7 +19,7 @@ airflow:
       - id: kubernetes_default
         type: kubernetes
         in_cluster: true
-      - id: rabbitmq
+      - id: rabbitmq_default
         type: amqp
         host: ${RABBITMQ_SERVICE_HOST}
         port: 5672
