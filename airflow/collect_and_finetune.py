@@ -4,7 +4,8 @@ from airflow.decorators import task
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from airflow.exceptions import AirflowFailException
 from rabbitmq_provider.hooks.rabbitmq import RabbitMQHook
-from kubernetes import config, client, models as k8s, watch
+from kubernetes import config, client, watch
+from kubernetes.client import models as k8s 
 
 
 selenium_hub_pod = (
