@@ -15,6 +15,6 @@ COPY pyproject.toml poetry.lock /app/
 RUN poetry install
 COPY . .
 
-EXPOSE 9000
+EXPOSE 8100
 
-CMD ["poetry", "run", "uvicorn", "model_server.main:app", "--port=9000"]
+CMD ["poetry", "run", "uvicorn", "model_server.main:app", "--host=0.0.0.0", "--port=8100"]
