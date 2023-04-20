@@ -89,7 +89,7 @@ selenium_node_deployment = (
                                 k8s.V1EnvVar(name="SE_NODE_MAX_SESSIONS", value="10"),
                                 k8s.V1EnvVar(name="SE_NODE_OVERRIDE_MAX_SESSIONS", value="true"),
                             ],
-                            resources=k8s.V1ResourceRequirements(requests=dict(memory='2g')),
+                            resources=k8s.V1ResourceRequirements(requests=dict(memory='2G')),
                         )
                     ]
                 )
