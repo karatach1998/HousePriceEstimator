@@ -25,6 +25,7 @@ namespace = (
 selenium_hub_pod = (
     k8s.V1Pod(
         metadata=k8s.V1ObjectMeta(
+            name="selenium-hub",
             labels=dict(app="selenium-hub")
         ),
         spec=k8s.V1PodSpec(
