@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import requests
 from airflow import DAG
 from airflow.decorators import task
@@ -120,7 +122,7 @@ class RabbitMQEmptySensor():
         return q.method.message_count == 0
 
 
-with DAG(dag_id="collect_and_finetune", schedule="*/2 * * * *") as dag:
+with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2 * * * *") as dag:
     kube_namespace = "scrapper"
 
     @task
