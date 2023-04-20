@@ -65,5 +65,8 @@ jobs:
               CLICKHOUSE_PASSWORD: ${{ secrets.CLICKHOUSE_PASSWORD }}
               RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
               RABBITMQ_ERLANG_COOKIE: ${{ secrets.RABBITMQ_ERLANG_COOKIE }}
+            rabbitmq:
+              auth:
+                password: ${{ secrets.RABBITMQ_PASSWORD }}
         env:
           KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'
