@@ -1,12 +1,6 @@
 dependencies:
-- name: clickhouse
-  repository: https://charts.bitnami.com/bitnami
-  version: 3.1.6
 - name: rabbitmq
   repository: https://charts.bitnami.com/bitnami
   version: 11.13.0
-- name: airflow
-  repository: https://airflow-helm.github.io/charts
-  version: 8.7.0
-digest: sha256:dbcc578c78683e12bc2caa4f8438781be25da6046293f53e23ca44250524973d
-generated: "2023-04-20T07:19:50.828388301+03:00"
+digest: sha256:639350ab0904911edd32ffa1a23a166bc856e39cb15f4f8bd9dddbbe7356b9b3
+generated: "2023-04-20T12:08:13.940603396+03:00"
