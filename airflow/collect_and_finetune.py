@@ -114,7 +114,7 @@ selenium_node_hpa = (
                         name='cpu',
                         target=k8s.V2MetricTarget(
                             type='Utilization',
-                            average_utilization=50,
+                            average_utilization='50',
                         )
                     )
                 ),
@@ -188,7 +188,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         name="scrapper_producer",
         is_delete_operator_pod=True,
         env_vars={
-            "BROKER_URL": r"amqp://{{ conn.rabbitmq.login }}:{{ conn.rabbitmq.password }}@{{ conn.rabbitmq.host }}:{{ conn.rabbitmq.port }}/",
+            "BROKER_URL": r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/",
             "SELENIUM_REMOTE_URL": "http://selenium:4444/wd/hub",
         },
     )
@@ -201,7 +201,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         name="scrapper_worker",
         is_delete_operator_pod=True,
         env_vars={
-            "BROKER_URL": r"amqp://{{ conn.rabbitmq.login }}:{{ conn.rabbitmq.password }}@{{ conn.rabbitmq.host }}:{{ conn.rabbitmq.port }}/",
+            "BROKER_URL": r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/",
             "SELENIUM_REMOTE_URL": "http://selenium:4444/wd/hub",
         },
     )
