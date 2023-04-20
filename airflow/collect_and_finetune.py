@@ -12,6 +12,16 @@ from kubernetes import config, client, watch
 from kubernetes.client import models as k8s 
 
 
+kube_namespace = "scrapper"
+
+namespace = (
+    k8s.V1Namespace(
+        metadata=k8s.V1ObjectMeta(
+            name=kube_namespace
+        )
+    )
+)
+
 selenium_hub_pod = (
     k8s.V1Pod(
         metadata=k8s.V1ObjectMeta(
@@ -127,12 +137,11 @@ class RabbitMQEmptySensor(BaseSensorOperator):
 
 
 with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2 * * * *") as dag:
-    kube_namespace = "scrapper"
-
     @task
     def create_selenium_hub():
         config.load_incluster_config()
         core_api = client.CoreV1Api()
+        core_api.create_namespace(body=namespace)
         core_api.create_namespaced_pod(body=selenium_hub_pod, namespace=kube_namespace)
         core_api.create_namespaced_service(body=selenium_hub_service, namespace=kube_namespace)
         w = watch.Watch()
@@ -161,6 +170,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         core_api = client.AppsV1Api()
         core_api.delete_namespaced_service(body=selenium_hub_service, namespace=kube_namespace)
         core_api.delete_namespaced_pod(body=selenium_hub_pod, namespace=kube_namespace)
+        core_api.delete_namespace(body=namespace)
 
     @task
     def delete_selenium_node():
