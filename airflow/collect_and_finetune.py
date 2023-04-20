@@ -3,8 +3,9 @@ from datetime import datetime
 import requests
 from airflow import DAG
 from airflow.decorators import task
-from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from airflow.exceptions import AirflowFailException
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+from airflow.sensors.base import BaseSensorOperator
 from rabbitmq_provider.hooks.rabbitmq import RabbitMQHook
 from kubernetes import config, client, watch
 from kubernetes.client import models as k8s 
@@ -111,7 +112,7 @@ selenium_node_hpa = (
 )
 
 
-class RabbitMQEmptySensor():
+class RabbitMQEmptySensor(BaseSensorOperator):
     def __init__(self, queue_name):
         super(RabbitMQEmptySensor, self).__init__()
         self.queue_name = queue_name
