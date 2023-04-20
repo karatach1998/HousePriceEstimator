@@ -15,6 +15,7 @@ airflow:
   airflow:
     connections:
       - id: kubernetes_default
+        type: kubernetes
         in_cluster: true
       - id: rabbitmq
         type: amqp
