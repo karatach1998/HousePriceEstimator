@@ -1,7 +1,7 @@
 import requests
 from airflow import DAG
 from airflow.decorators import task
-from airflow.providers.cncf.kubernetes.operators.pod import KuberntesPodOperator
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KuberntesPodOperator
 from airflow.exceptions import AirflowFailException
 from rabbitmq_provider.hooks.rabbitmq import RabbitMQHook
 from kubernetes import config, client, models as k8s, watch
