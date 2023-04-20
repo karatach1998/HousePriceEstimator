@@ -36,7 +36,7 @@ selenium_hub_pod = (
                     ports=[
                         k8s.V1ContainerPort(container_port=4442, name="publish-port"),
                         k8s.V1ContainerPort(container_port=4443, name="subscribe-port"),
-                        k8s.V1ContainerPort(container_port=4444, name="selenium-hub-port"),
+                        k8s.V1ContainerPort(container_port=4444, name="selenium-port"),
                     ]
                 )
             ]
@@ -53,7 +53,7 @@ selenium_hub_service = (
             type='ClusterIP',
             selector=dict(app="selenium-hub"),
             ports=[
-                k8s.V1ServicePort(port=4444, target_port="selenium-hub-port"),
+                k8s.V1ServicePort(port=4444, target_port="selenium-port"),
             ]
         )
     )
