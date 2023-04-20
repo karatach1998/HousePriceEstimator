@@ -34,8 +34,8 @@ selenium_hub_pod = (
                     image="selenium/hub:4.8",
                     image_pull_policy="IfNotPresent",
                     ports=[
-                        k8s.V1ContainerPort(container_port=4442, name="event-bus-publish-port"),
-                        k8s.V1ContainerPort(container_port=4443, name="event-bus-subscribe-port"),
+                        k8s.V1ContainerPort(container_port=4442, name="publish-port"),
+                        k8s.V1ContainerPort(container_port=4443, name="subscribe-port"),
                         k8s.V1ContainerPort(container_port=4444, name="selenium-hub-port"),
                     ]
                 )
