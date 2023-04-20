@@ -162,7 +162,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         apps_api.create_namespaced_deployment(body=selenium_node_deployment, namespace=kube_namespace)
         client.AutoscalingV2Api().create_namespaced_horizontal_pod_autoscaler(body=selenium_node_hpa, namespace=kube_namespace)
         w = watch.Watch()
-        for event in w.stream(apps_api.list_namespaced_deployment, field_selector="name=selenium-node", namespace=kube_namespace):
+        for event in w.stream(apps_api.list_namespaced_deployment, field_selector="metadata.name=selenium-node", namespace=kube_namespace):
             if event['object'].status.ready_replicas >= 1:
                 break
         else:
