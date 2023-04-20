@@ -100,6 +100,9 @@ selenium_node_deployment = (
 
 selenium_node_hpa = (
     k8s.V2HorizontalPodAutoscaler(
+        metadata=k8s.V1ObjectMeta(
+            name="selenium-node-hpa",
+        ),
         spec=k8s.V2HorizontalPodAutoscalerSpec(
             scale_target_ref=k8s.V2CrossVersionObjectReference(
                 kind='Deployment',
