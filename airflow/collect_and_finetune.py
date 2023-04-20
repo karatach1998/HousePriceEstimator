@@ -114,7 +114,7 @@ selenium_node_hpa = (
                         name='cpu',
                         target=k8s.V2MetricTarget(
                             type='Utilization',
-                            average_utilization='50',
+                            average_utilization=50,
                         )
                     )
                 ),
