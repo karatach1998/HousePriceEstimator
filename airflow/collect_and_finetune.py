@@ -1,7 +1,7 @@
 import requests
 from airflow import DAG
 from airflow.decorators import task
-from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KuberntesPodOperator
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from airflow.exceptions import AirflowFailException
 from rabbitmq_provider.hooks.rabbitmq import RabbitMQHook
 from kubernetes import config, client, models as k8s, watch
@@ -159,7 +159,7 @@ with DAG(dag_id="collect_and_finetune", schedule="*/2 * * * *") as dag:
         client.AutoscalingV2Api().delete_namespaced_horizontal_pod_autoscaler(body=selenium_node_hpa, namespace=kube_namespace)
         client.AppsV1Api().delete_namespaced_deployment(body=selenium_node_deployment, namespace=kube_namespace)
 
-    scrapper_producer = KuberntesPodOperator(
+    scrapper_producer = KubernetesPodOperator(
         task_id="scrape_offers_list",
         namespace=kube_namespace,
         image="ghcr.io/karatach1998/toolbox:latest",
@@ -172,7 +172,7 @@ with DAG(dag_id="collect_and_finetune", schedule="*/2 * * * *") as dag:
             "SELENIUM_REMOTE_URL": "http://selenium:4444/wd/hub",
         },
     )
-    scrapper_worker = KuberntesPodOperator(
+    scrapper_worker = KubernetesPodOperator(
         task_id="scrape_offers_info",
         namespace=kube_namespace,
         image="ghcr.io/karatach1998/toolbox:latest",
