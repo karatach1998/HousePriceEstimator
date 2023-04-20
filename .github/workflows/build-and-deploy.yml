@@ -59,6 +59,7 @@ jobs:
           namespace: 'default'
           chart: './charts/housepriceestimator'
           token: '${{ github.token }}'
+          secrets: '${{ toJSON(secrets) }}'
           values: |
             secrets:
               CLICKHOUSE_PASSWORD: '${{ secrets.CLICKHOUSE_PASSWORD }}'
