@@ -113,9 +113,10 @@ selenium_node_hpa = (
 
 
 class RabbitMQEmptySensor(BaseSensorOperator):
-    def __init__(self, queue_name):
-        super(RabbitMQEmptySensor, self).__init__()
+    def __init__(self, queue_name, rabbitmq_conn_id, **kwargs):
+        super(RabbitMQEmptySensor, self).__init__(**kwargs)
         self.queue_name = queue_name
+        self.rabbitmq_conn_id = rabbitmq_conn_id
 
     def poke(self):
         hook = RabbitMQHook("rabbitmq")
