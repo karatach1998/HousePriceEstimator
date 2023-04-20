@@ -115,8 +115,8 @@ selenium_node_hpa = (
 
 class RabbitMQEmptySensor(BaseSensorOperator):
     @apply_defaults
-    def __init__(self, queue_name, rabbitmq_conn_id = 'rabbitmq_default', **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, queue_name, rabbitmq_conn_id = 'rabbitmq_default', task_id = None, **kwargs):
+        super().__init__(task_id="wait_for_empty_{}_queue".format(queue_name) if task_id is None else task_id, **kwargs)
         self.queue_name = queue_name
         self.rabbitmq_conn_id = rabbitmq_conn_id
 
