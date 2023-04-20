@@ -47,7 +47,7 @@ selenium_hub_service = (
 
 selenium_node_deployment = (
     k8s.V1Deployment(
-        metadata=k8s.V1PodTemplateSpec(
+        metadata=k8s.V1ObjectMeta(
             name="selenium-node"
         ),
         spec=k8s.V1DeploymentSpec(
