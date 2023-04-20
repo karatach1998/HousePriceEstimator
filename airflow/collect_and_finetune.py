@@ -6,6 +6,7 @@ from airflow.decorators import task
 from airflow.exceptions import AirflowFailException
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from airflow.sensors.base import BaseSensorOperator
+from airflow.utils.decorators import apply_defaults
 from rabbitmq_provider.hooks.rabbitmq import RabbitMQHook
 from kubernetes import config, client, watch
 from kubernetes.client import models as k8s 
@@ -113,8 +114,9 @@ selenium_node_hpa = (
 
 
 class RabbitMQEmptySensor(BaseSensorOperator):
+    @apply_defaults
     def __init__(self, queue_name, rabbitmq_conn_id = 'rabbitmq_default', **kwargs):
-        super(RabbitMQEmptySensor, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.queue_name = queue_name
         self.rabbitmq_conn_id = rabbitmq_conn_id
 
