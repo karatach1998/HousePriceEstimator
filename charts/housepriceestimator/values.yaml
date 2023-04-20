@@ -1,7 +1,7 @@
 secrets:
-  CLICKHOUSE_PASSWORD: ""
-  RABBITMQ_PASSWORD: ""
-  RABBITMQ_ERLANG_COOKIE: ""
+  clickhousePassword: ""
+  rabbitmqPassword: ""
+  rabbitmqErlangCookie: ""
 
 clickhouse:
   auth:
@@ -33,6 +33,7 @@ airflow:
     extraPipPackages:
       - "apache-airflow-providers-cncf-kubernetes"
       - "airflow-provider-rabbitmq"
+      - "kubernetes"
       - "requests"
   dags:
     gitSync:
