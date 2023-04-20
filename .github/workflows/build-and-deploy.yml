@@ -62,7 +62,7 @@ jobs:
           secrets: '${{ toJSON(secrets) }}'
           values: |
             secrets:
-              CLICKHOUSE_PASSWORD: '${{ secrets.CLICKHOUSE_PASSWORD }}'
-              RABBITMQ_PASSWORD: '${{ secrets.RABBITMQ_PASSWORD }}'
+              CLICKHOUSE_PASSWORD: ${{ secrets.CLICKHOUSE_PASSWORD }}
+              RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
         env:
           KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'
