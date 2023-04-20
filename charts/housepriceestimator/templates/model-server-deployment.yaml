@@ -17,6 +17,16 @@ spec:
           image: ghcr.io/karatach1998/model-server:latest
           imagePullPolicy: Always
           command: ["poetry", "run", "uvicorn", "model_server.main:app", "--host=0.0.0.0", "--port=8100"]
+          env:
+            - name: CLICKHOUSE_HOST
+              value: {{ include 'common.names.fullname' . | quote }}
+            - name: CLICKHOUSE_USERNAME
+              value: {{ .Values.clickhouse.auth.username | quote }}
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: clickhouse-password
+                  name: credentials
           ports:
             - containerPort: 8100
               protocol: TCP

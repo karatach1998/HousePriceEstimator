@@ -1,0 +1,12 @@
+secrets:
+  CLICKHOUSE_PASSWORD: ""
+  RABBITMQ_PASSWORD: ""
+
+clickhouse:
+  auth:
+    existingSecret: credentials
+    existingSecretKey: clickhouse-password
+
+rabbitmq:
+  auth:
+    existingPasswordSecret: credentials
