@@ -54,6 +54,8 @@ selenium_hub_service = (
             type='ClusterIP',
             selector=dict(app="selenium-hub"),
             ports=[
+                k8s.V1ServicePort(port=4442, target_port="publish-port"),
+                k8s.V1ServicePort(port=4443, target_port="subscribe-port"),
                 k8s.V1ServicePort(port=4444, target_port="selenium-port"),
             ]
         )
@@ -81,7 +83,7 @@ selenium_node_deployment = (
                             image="selenium/node-chrome:4.8",
                             image_pull_policy="IfNotPresent",
                             env=[
-                                k8s.V1EnvVar(name="SE_EVENT_BUS_HOST", value="selenium-hub"),
+                                k8s.V1EnvVar(name="SE_EVENT_BUS_HOST", value="selenium"),
                                 k8s.V1EnvVar(name="SE_EVENT_BUS_PUBLISH_PORT", value="4442"),
                                 k8s.V1EnvVar(name="SE_EVENT_BUS_SUBSCRIBE_PORT", value="4443"),
                                 k8s.V1EnvVar(name="SE_NODE_HOST", value_from=k8s.V1EnvVarSource(field_ref=k8s.V1ObjectFieldSelector(field_path="status.podIP"))),
