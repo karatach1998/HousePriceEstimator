@@ -21,7 +21,7 @@ airflow:
         in_cluster: true
       - id: rabbitmq_default
         type: amqp
-        host: '"os.getenv('''RABBITMQ_SERVICE_HOST''')"'
+        host: housepriceestimator-rabbitmq.svc.default.cluster.local
         port: 5672
         login: user
         password: ${RABBITMQ_PASSWORD}
