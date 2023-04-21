@@ -127,8 +127,8 @@ async def get_cian_sale_info(sale_url):
                             (
                                 (await path.get_attribute("d"))[:3]
                                 if (path := await check_element(span, "path", SelectorType.tag_name))
-                                else span.get_text().split(". ")[-1]
-                            )
+                                else (await span.get_text()).split(". ")[-1]
+                           )
                             if (span := await check_element(li, "span", SelectorType.tag_name))
                             else None
                         )
