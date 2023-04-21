@@ -46,7 +46,7 @@ async def get_cian_sale_links():
     sales_scrapped = 0
     page_index = 1
     service = services.Remote(os.getenv('SELENIUM_REMOTE_URL'))
-    browser = browsers.Chrome()
+    browser = browsers.Firefox()
     async with get_session(service, browser) as session:
         while total_sales is None or sales_scrapped < total_sales:
             await session.get(url.format(p=page_index))
@@ -92,7 +92,7 @@ async def get_following_sibling_desc(session, *queries, converter=None):
 # @profile
 async def get_cian_sale_info(sale_url):
         service = services.Remote(os.getenv('SELENIUM_REMOTE_URL'))
-        browser = browsers.Chrome()
+        browser = browsers.Firefox()
         result = None
         async with get_session(service, browser) as session:
             await session.get(sale_url)

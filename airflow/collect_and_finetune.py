@@ -80,7 +80,7 @@ selenium_node_deployment = (
                     containers=[
                         k8s.V1Container(
                             name="node",
-                            image="selenium/node-chrome:4.8",
+                            image="selenium/node-firefox:4.8",
                             image_pull_policy="IfNotPresent",
                             env=[
                                 k8s.V1EnvVar(name="SE_EVENT_BUS_HOST", value="selenium"),
@@ -188,7 +188,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         task_id="scrape_offers_list",
         namespace=kube_namespace,
         image="ghcr.io/karatach1998/toolbox:latest",
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         cmds=["poetry", "run", "python", "toolbox/cian_scrapper.py"],
         name="scrapper_producer",
         is_delete_operator_pod=True,
@@ -201,7 +201,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         task_id="scrape_offers_info",
         namespace=kube_namespace,
         image="ghcr.io/karatach1998/toolbox:latest",
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         cmds=["/bin/sh", "-c", "pwd ; echo $BROKER_URL ; poetry run celery -A toolbox.cian_scrapper.celeryapp worker -P celery_pool_asyncio:TaskPool"],
         name="scrapper_worker",
         is_delete_operator_pod=True,
