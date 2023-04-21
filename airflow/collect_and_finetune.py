@@ -202,7 +202,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         namespace=kube_namespace,
         image="ghcr.io/karatach1998/toolbox:latest",
         image_pull_policy="Always",
-        cmds=["poetry", "run", "celery", "-A toolbox.cian_scrapper.celeryapp", "worker", "-P celery_pool_asyncio:TaskPool"],
+        cmds=["/bin/sh", "-c", "ls -l . ; poetry run celery -A toolbox.cian_scrapper.celeryapp worker -P celery_pool_asyncio:TaskPool"],
         name="scrapper_worker",
         is_delete_operator_pod=True,
         env_vars={
