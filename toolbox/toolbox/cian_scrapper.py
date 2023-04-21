@@ -147,7 +147,8 @@ async def get_cian_sale_info(sale_url):
                 max_floor=await get_following_sibling_desc(session, "Этаж", converter=lambda x: parse_int(x.split()[-1])),
                 build_year=await get_following_sibling_desc(session, "Год сдачи", "Год постройки", converter=parse_int),
             )
-        # print(result)
+        print(result)
+        return result
 
 
 async def run_cian_link_collection():
@@ -156,5 +157,5 @@ async def run_cian_link_collection():
         
 
 if __name__ == '__main__':
-    # asyncio.run(run_cian_link_collection())
-    asyncio.run(get_cian_sale_info("https://www.cian.ru/sale/flat/276096419/"))
+    asyncio.run(run_cian_link_collection())
+    # asyncio.run(get_cian_sale_info("https://www.cian.ru/sale/flat/276096419/"))
