@@ -207,6 +207,10 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         is_delete_operator_pod=True,
         env_vars={
             "BROKER_URL": r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/",
+            "CELERY_RESULT_BACKEND": 'rpc://',
+            "CELERY_RESULT_EXCHANGE": "results",
+            "CELERY_RESULT_EXCHANGE_TYPE": 'direct',
+            "CELERY_RESULT_PERSISTENT": 'true',
             "SELENIUM_REMOTE_URL": "http://selenium:4444/wd/hub",
         },
     )
