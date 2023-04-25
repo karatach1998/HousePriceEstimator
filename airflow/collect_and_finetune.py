@@ -128,6 +128,31 @@ selenium_node_hpa = (
     )
 )
 
+scrapper_worker_pod = (
+    k8s.V1Pod(
+        metadata=k8s.V1ObjectMeta(
+            name="scrapper_worker",
+        ),
+        spec=k8s.V1PodSpec(
+            containers=[
+                k8s.V1Container(
+                    name="scrapper_worker",
+                    image="ghcr.io/karatach1998/toolbox:latest",
+                    image_pull_policy="Always",
+                    command=["/bin/sh", "-c", "ls -l . ; poetry run celery -A toolbox.cian_scrapper.celeryapp worker -P celery_pool_asyncio:TaskPool"],
+                    env=[
+                        k8s.V1EnvVar(name="BROKER_URL", value=r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/"),
+                        k8s.V1EnvVar(name="CELERY_RESULT_BACKEND", value='rpc://'),
+                        k8s.V1EnvVar(name="CELERY_RESULT_EXCHANGE", value="results"),
+                        k8s.V1EnvVar(name="CELERY_RESULT_EXCHANGE_TYPE", value='direct'),
+                        k8s.V1EnvVar(name="CELERY_RESULT_PERSISTENT", value='true'),
+                        k8s.V1EnvVar(name="SELENIUM_REMOTE_URL", value="http://selenium:4444/wd/hub"),
+                    ]
+                )
+            ],
+        )
+    )
+)
 
 class RabbitMQEmptySensor(BaseSensorOperator):
     @apply_defaults
@@ -169,6 +194,12 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
                 break
         else:
             raise AirflowFailException()
+    
+    @task
+    def create_scrapper_worker():
+        config.load_incluster_config()
+        core_api = client.CoreV1Api()
+        core_api.create_namespaced_pod(body=scrapper_worker_pod, namespace=kube_namespace)
 
     @task
     def delete_selenium_hub():
@@ -183,6 +214,12 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         config.load_incluster_config()
         client.AutoscalingV2Api().delete_namespaced_horizontal_pod_autoscaler(body=selenium_node_hpa, namespace=kube_namespace)
         client.AppsV1Api().delete_namespaced_deployment(body=selenium_node_deployment, namespace=kube_namespace)
+    
+    @task
+    def delete_scrapper_worker():
+        config.load_incluster_config()
+        core_api = client.CoreV1Api()
+        core_api.delete_namespaced_pod(body=scrapper_worker_pod, namespace=kube_namespace)
 
     scrapper_producer = KubernetesPodOperator(
         task_id="scrape_offers_list",
@@ -197,23 +234,6 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
             "SELENIUM_REMOTE_URL": "http://selenium:4444/wd/hub",
         },
     )
-    scrapper_worker = KubernetesPodOperator(
-        task_id="scrape_offers_info",
-        namespace=kube_namespace,
-        image="ghcr.io/karatach1998/toolbox:latest",
-        image_pull_policy="Always",
-        cmds=["/bin/sh", "-c", "ls -l . ; poetry run celery -A toolbox.cian_scrapper.celeryapp worker -P celery_pool_asyncio:TaskPool"],
-        name="scrapper_worker",
-        is_delete_operator_pod=True,
-        env_vars={
-            "BROKER_URL": r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/",
-            "CELERY_RESULT_BACKEND": 'rpc://',
-            "CELERY_RESULT_EXCHANGE": "results",
-            "CELERY_RESULT_EXCHANGE_TYPE": 'direct',
-            "CELERY_RESULT_PERSISTENT": 'true',
-            "SELENIUM_REMOTE_URL": "http://selenium:4444/wd/hub",
-        },
-    )
 
     tasks_queue_empty = RabbitMQEmptySensor(queue_name="tasks")
     sales_infos_queue_empty = RabbitMQEmptySensor(queue_name="sales_infos")
@@ -224,8 +244,8 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
 
     (
         create_selenium_hub() >> create_selenium_node()
-        >> [scrapper_producer, scrapper_worker]
-        >> tasks_queue_empty 
+        >> [scrapper_producer, create_scrapper_worker()]
+        >> tasks_queue_empty >> delete_scrapper_worker()
         >> delete_selenium_node() >> delete_selenium_hub()
         >> sales_infos_queue_empty
         >> finetune_model()
