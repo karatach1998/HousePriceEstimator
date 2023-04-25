@@ -218,10 +218,10 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         client.AppsV1Api().delete_namespaced_deployment(body=selenium_node_deployment, namespace=kube_namespace)
     
     @task
-    def delete_scrapper_worker():
+    def delete_scrapper_worker(conn):
         config.load_incluster_config()
         core_api = client.CoreV1Api()
-        core_api.delete_namespaced_pod(body=scrapper_worker_pod, namespace=kube_namespace)
+        core_api.delete_namespaced_pod(body=scrapper_worker_pod(conn), namespace=kube_namespace)
 
     scrapper_producer = KubernetesPodOperator(
         task_id="scrape_offers_list",
