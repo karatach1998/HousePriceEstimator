@@ -131,12 +131,12 @@ selenium_node_hpa = (
 scrapper_worker_pod = (
     k8s.V1Pod(
         metadata=k8s.V1ObjectMeta(
-            name="scrapper_worker",
+            name="scrapper-worker",
         ),
         spec=k8s.V1PodSpec(
             containers=[
                 k8s.V1Container(
-                    name="scrapper_worker",
+                    name="scrapper-worker",
                     image="ghcr.io/karatach1998/toolbox:latest",
                     image_pull_policy="Always",
                     command=["/bin/sh", "-c", "ls -l . ; poetry run celery -A toolbox.cian_scrapper.celeryapp worker -P celery_pool_asyncio:TaskPool"],
