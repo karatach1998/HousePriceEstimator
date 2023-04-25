@@ -142,6 +142,7 @@ scrapper_worker_pod = (
                     command=["/bin/sh", "-c", "ls -l . ; poetry run celery -A toolbox.cian_scrapper.celeryapp worker -P celery_pool_asyncio:TaskPool"],
                     env=[
                         k8s.V1EnvVar(name="BROKER_URL", value=r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/"),
+                        k8s.V1EnvVar(name="CELERY_DEFAULT_QUEUE", value="tasks"),
                         k8s.V1EnvVar(name="CELERY_RESULT_BACKEND", value='rpc://'),
                         k8s.V1EnvVar(name="CELERY_RESULT_EXCHANGE", value="results"),
                         k8s.V1EnvVar(name="CELERY_RESULT_EXCHANGE_TYPE", value='direct'),
