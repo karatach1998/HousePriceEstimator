@@ -207,21 +207,21 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
     def delete_selenium_hub():
         config.load_incluster_config()
         core_api = client.AppsV1Api()
-        core_api.delete_namespaced_service(body=selenium_hub_service, namespace=kube_namespace)
-        core_api.delete_namespaced_pod(body=selenium_hub_pod, namespace=kube_namespace)
-        core_api.delete_namespace(body=namespace)
+        core_api.delete_namespaced_service(name="selenium", namespace=kube_namespace)
+        core_api.delete_namespaced_pod(name="selenium-hub", namespace=kube_namespace)
+        core_api.delete_namespace(name=kube_namespace)
 
     @task
     def delete_selenium_node():
         config.load_incluster_config()
-        client.AutoscalingV2Api().delete_namespaced_horizontal_pod_autoscaler(body=selenium_node_hpa, namespace=kube_namespace)
-        client.AppsV1Api().delete_namespaced_deployment(body=selenium_node_deployment, namespace=kube_namespace)
+        client.AutoscalingV2Api().delete_namespaced_horizontal_pod_autoscaler(name="selenium-node", namespace=kube_namespace)
+        client.AppsV1Api().delete_namespaced_deployment(name="selenium-node", namespace=kube_namespace)
     
     @task
-    def delete_scrapper_worker(**kwargs):
+    def delete_scrapper_worker():
         config.load_incluster_config()
         core_api = client.CoreV1Api()
-        core_api.delete_namespaced_pod(body=scrapper_worker_pod(kwargs.get('conn')), namespace=kube_namespace)
+        core_api.delete_namespaced_pod(name="scrapper-worker", namespace=kube_namespace)
 
     scrapper_producer = KubernetesPodOperator(
         task_id="scrape_offers_list",
