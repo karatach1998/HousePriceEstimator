@@ -136,7 +136,7 @@ scrapper_worker_pod = (
         spec=k8s.V1PodSpec(
             containers=[
                 k8s.V1Container(
-                    name="scrapper-worker",
+                    name="celery",
                     image="ghcr.io/karatach1998/toolbox:latest",
                     image_pull_policy="Always",
                     command=["/bin/sh", "-c", "ls -l . ; poetry run celery -A toolbox.cian_scrapper.celeryapp worker -P celery_pool_asyncio:TaskPool"],
