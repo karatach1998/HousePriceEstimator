@@ -206,7 +206,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
     @task
     def delete_selenium_hub():
         config.load_incluster_config()
-        core_api = client.AppsV1Api()
+        core_api = client.CoreV1Api()
         core_api.delete_namespaced_service(name="selenium", namespace=kube_namespace)
         core_api.delete_namespaced_pod(name="selenium-hub", namespace=kube_namespace)
         core_api.delete_namespace(name=kube_namespace)
