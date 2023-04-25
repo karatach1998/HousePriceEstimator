@@ -144,7 +144,7 @@ scrapper_worker_pod = lambda conn: (
                     env=[
                         k8s.V1EnvVar(name="BROKER_URL", value=Template(r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
                         k8s.V1EnvVar(name="CELERY_DEFAULT_QUEUE", value="tasks"),
-                        k8s.V1EnvVar(name="CELERY_RESULT_BACKEND", value='rpc://'),
+                        k8s.V1EnvVar(name="CELERY_RESULT_BACKEND", value=Template(r"rpc://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
                         k8s.V1EnvVar(name="CELERY_RESULT_EXCHANGE", value="results"),
                         k8s.V1EnvVar(name="CELERY_RESULT_EXCHANGE_TYPE", value='direct'),
                         k8s.V1EnvVar(name="CELERY_RESULT_PERSISTENT", value='true'),
