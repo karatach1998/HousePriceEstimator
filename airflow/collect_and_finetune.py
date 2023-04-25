@@ -7,6 +7,7 @@ from airflow.exceptions import AirflowFailException
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from airflow.sensors.base import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
+from jinja2 import Template
 from rabbitmq_provider.hooks.rabbitmq import RabbitMQHook
 from kubernetes import config, client, watch
 from kubernetes.client import models as k8s 
@@ -128,7 +129,7 @@ selenium_node_hpa = (
     )
 )
 
-scrapper_worker_pod = (
+scrapper_worker_pod = lambda conn: (
     k8s.V1Pod(
         metadata=k8s.V1ObjectMeta(
             name="scrapper-worker",
@@ -141,7 +142,7 @@ scrapper_worker_pod = (
                     image_pull_policy="Always",
                     command=["/bin/sh", "-c", "ls -l . ; poetry run celery -A toolbox.cian_scrapper.celeryapp worker -P celery_pool_asyncio:TaskPool"],
                     env=[
-                        k8s.V1EnvVar(name="BROKER_URL", value=r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/"),
+                        k8s.V1EnvVar(name="BROKER_URL", value=Template(r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
                         k8s.V1EnvVar(name="CELERY_DEFAULT_QUEUE", value="tasks"),
                         k8s.V1EnvVar(name="CELERY_RESULT_BACKEND", value='rpc://'),
                         k8s.V1EnvVar(name="CELERY_RESULT_EXCHANGE", value="results"),
@@ -197,10 +198,10 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
             raise AirflowFailException()
     
     @task
-    def create_scrapper_worker():
+    def create_scrapper_worker(conn):
         config.load_incluster_config()
         core_api = client.CoreV1Api()
-        core_api.create_namespaced_pod(body=scrapper_worker_pod, namespace=kube_namespace)
+        core_api.create_namespaced_pod(body=scrapper_worker_pod(conn), namespace=kube_namespace)
 
     @task
     def delete_selenium_hub():
@@ -232,8 +233,8 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         is_delete_operator_pod=True,
         env_vars={
             "BROKER_URL": r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/",
-            "SELENIUM_REMOTE_URL": "http://selenium:4444/wd/hub",
             "CELERY_DEFAULT_QUEUE": "tasks",
+            "SELENIUM_REMOTE_URL": "http://selenium:4444/wd/hub",
         },
     )
 
