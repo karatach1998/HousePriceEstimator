@@ -233,6 +233,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         env_vars={
             "BROKER_URL": r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/",
             "SELENIUM_REMOTE_URL": "http://selenium:4444/wd/hub",
+            "CELERY_DEFAULT_QUEUE": "tasks",
         },
     )
 
