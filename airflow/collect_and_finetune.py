@@ -161,7 +161,7 @@ class RabbitMQEmptySensor(BaseSensorOperator):
         self.queue_name = queue_name
         self.rabbitmq_conn_id = rabbitmq_conn_id
 
-    def poke(self):
+    def poke(self, context):
         hook = RabbitMQHook(self.rabbitmq_conn_id)
         q = hook.declare_queue(self.queue_name, passive=True)
         return q.method.message_count == 0
