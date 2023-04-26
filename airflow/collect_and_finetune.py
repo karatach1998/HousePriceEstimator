@@ -147,6 +147,7 @@ scrapper_worker_pod = lambda conn: (
                         # k8s.V1EnvVar(name="CELERY_RESULT_BACKEND", value=Template(r"rpc://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
                         k8s.V1EnvVar(name="CELERY_RESULT_BACKEND", value='rpc://'),
                         k8s.V1EnvVar(name="CELERY_RESULT_PERSISTENT", value='true'),
+                        # k8s.V1EnvVar(name="RESULTS_QUEUE", value="sales_info"),
                         k8s.V1EnvVar(name="SELENIUM_REMOTE_URL", value="http://selenium:4444/wd/hub"),
                     ]
                 )
@@ -233,6 +234,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         env_vars={
             "BROKER_URL": r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/",
             "CELERY_DEFAULT_QUEUE": "tasks",
+            "RESULTS_QUEUE": "sales_info",
             "SELENIUM_REMOTE_URL": "http://selenium:4444/wd/hub",
         },
     )

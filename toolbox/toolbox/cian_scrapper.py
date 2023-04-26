@@ -1,13 +1,15 @@
 import re
 import os
+import json
 import asyncio
 from functools import cached_property
 
-from celery import Celery, Task
-from celery.signals import worker_init, worker_shutting_down
+import aio_pika
 from arsenic import get_session, browsers, services, errors
 from arsenic.session import Element, Session
 from arsenic.constants import SelectorType
+from celery import Celery, Task
+from celery.signals import worker_init, worker_shutting_down
 
 
 CURRENCY_SYMBOL_TO_NAME = {
@@ -40,6 +42,19 @@ celeryapp = Celery('toolbox.cian_scrapper')
 celeryapp.config_from_object(os.environ)
 
 
+async def publish_result(result):
+    connection = await aio_pika.connect_robust(
+        os.environ('BROKER_URL'), 
+    )
+    async with connection:
+        channel = await connection.channel()
+        await channel.default_exchange.publish(
+            aio_pika.Message(body=json.dumps(result)),
+            routing_key=os.getenv('RESULTS_QUEUE'),
+        )
+        await connection.close()
+
+
 async def get_cian_sale_links():
     url = "https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&offer_type=flat&p={p}&region=1"
     total_sales = None
@@ -56,7 +71,7 @@ async def get_cian_sale_links():
             elements = await session.get_elements("//article[@data-name='CardComponent']//div[@data-name='LinkArea']/a", SelectorType.xpath)
             for el in elements:
                 print(await el.get_attribute('href'))
-                get_cian_sale_info.delay(await el.get_attribute('href'))
+                get_cian_sale_info.delay(await el.get_attribute('href')).then(publish_result)
             break
 
 
@@ -88,7 +103,7 @@ async def get_following_sibling_desc(session, *queries, converter=None):
     return (converter(e) if converter is not None else e) if e is not None else None
 
 
-@celeryapp.task(reply_to='sales_info')
+@celeryapp.task
 # @profile
 async def get_cian_sale_info(sale_url):
         service = services.Remote(os.getenv('SELENIUM_REMOTE_URL'))
