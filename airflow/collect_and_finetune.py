@@ -225,7 +225,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
         core_api.delete_namespaced_pod(name="scrapper-worker", namespace=kube_namespace)
 
     scrapper_producer = KubernetesPodOperator(
-        task_id="scrape_offers_list",
+        task_id="scrape_sales_list",
         namespace=kube_namespace,
         image="ghcr.io/karatach1998/toolbox:latest",
         image_pull_policy="Always",
@@ -240,7 +240,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="*/2
     )
 
     tasks_queue_empty = RabbitMQEmptySensor(queue_name="tasks")
-    sales_infos_queue_empty = RabbitMQEmptySensor(queue_name="sales_infos")
+    sales_infos_queue_empty = RabbitMQEmptySensor(queue_name="sales_info")
 
     @task
     def finetune_model():

@@ -88,7 +88,7 @@ async def get_following_sibling_desc(session, *queries, converter=None):
     return (converter(e) if converter is not None else e) if e is not None else None
 
 
-@celeryapp.task
+@celeryapp.task(reply_to='sales_info')
 # @profile
 async def get_cian_sale_info(sale_url):
         service = services.Remote(os.getenv('SELENIUM_REMOTE_URL'))
