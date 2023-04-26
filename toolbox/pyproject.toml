@@ -12,6 +12,7 @@ asyncio-pool = "^0.6.0"
 celery = "4.4.7"
 celery-pool-asyncio = "^0.2.0"
 arsenic = "^21.8"
+aio-pika = "^9.0.5"
 
 
 [tool.poetry.group.dev.dependencies]
