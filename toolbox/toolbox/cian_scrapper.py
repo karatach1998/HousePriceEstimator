@@ -58,7 +58,7 @@ async def get_cian_sale_links():
             elements = await session.get_elements("//article[@data-name='CardComponent']//div[@data-name='LinkArea']/a", SelectorType.xpath)
             for el in elements:
                 print(await el.get_attribute('href'))
-                get_cian_sale_info.delay(await el.get_attribute('href'), link=publish_result.s(os.getenv('SCRAPPER_RESULTS_QUEUE')))
+                get_cian_sale_info.s(await el.get_attribute('href')).apply_async(link=publish_result.s(os.getenv('SCRAPPER_RESULTS_QUEUE')))
             break
 
 
