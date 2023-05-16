@@ -42,19 +42,6 @@ celeryapp = Celery('toolbox.cian_scrapper')
 celeryapp.config_from_object(os.environ)
 
 
-async def publish_result(result):
-    connection = await aio_pika.connect_robust(
-        os.environ('BROKER_URL'), 
-    )
-    async with connection:
-        channel = await connection.channel()
-        await channel.default_exchange.publish(
-            aio_pika.Message(body=json.dumps(result)),
-            routing_key=os.getenv('RESULTS_QUEUE'),
-        )
-        await connection.close()
-
-
 async def get_cian_sale_links():
     url = "https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&offer_type=flat&p={p}&region=1"
     total_sales = None
@@ -71,8 +58,27 @@ async def get_cian_sale_links():
             elements = await session.get_elements("//article[@data-name='CardComponent']//div[@data-name='LinkArea']/a", SelectorType.xpath)
             for el in elements:
                 print(await el.get_attribute('href'))
-                get_cian_sale_info.delay(await el.get_attribute('href')).then(publish_result)
+                get_cian_sale_info.delay(await el.get_attribute('href'), link=publish_result.s(os.getenv('SCRAPPER_RESULTS_QUEUE')))
             break
+
+
+class PikaTask(Task):
+    def before_bind(self, app):
+
+
+@celeryapp.task(base=PikaTask, bind=True)
+async def publish_result(result, queue_name):
+    print(result, queue_name)
+    connection = await aio_pika.connect_robust(
+        os.environ('BROKER_URL'), 
+    )
+    async with connection:
+        channel = await connection.channel()
+        await channel.default_exchange.publish(
+            aio_pika.Message(body=json.dumps(result)),
+            routing_key=queue_name,
+        )
+        await connection.close()
 
 
 async def check_element(session_or_element: Session | Element, sel: str, sel_type: SelectorType) -> Element | None:
