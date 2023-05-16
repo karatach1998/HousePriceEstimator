@@ -62,11 +62,7 @@ async def get_cian_sale_links():
             break
 
 
-class PikaTask(Task):
-    def before_bind(self, app):
-
-
-@celeryapp.task(base=PikaTask, bind=True)
+@celeryapp.task
 async def publish_result(result, queue_name):
     print(result, queue_name)
     connection = await aio_pika.connect_robust(
