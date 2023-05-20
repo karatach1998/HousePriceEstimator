@@ -8,7 +8,7 @@ import aio_pika
 from arsenic import get_session, browsers, services, errors
 from arsenic.session import Element, Session
 from arsenic.constants import SelectorType
-from celery import Celery, Task
+from celery import chain, Celery, Task
 from celery.signals import worker_init, worker_shutting_down
 
 
@@ -44,6 +44,7 @@ celeryapp.config_from_object(os.environ)
 
 async def get_cian_sale_links():
     url = "https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&offer_type=flat&p={p}&region=1"
+    process_sale = chain(get_cian_sale_info.s(), publish_result.s(os.getenv('SCRAPPER_RESULTS_QUEUE')))
     total_sales = None
     sales_scrapped = 0
     page_index = 1
@@ -58,20 +59,20 @@ async def get_cian_sale_links():
             elements = await session.get_elements("//article[@data-name='CardComponent']//div[@data-name='LinkArea']/a", SelectorType.xpath)
             for el in elements:
                 print(await el.get_attribute('href'))
-                get_cian_sale_info.s(await el.get_attribute('href')).apply_async(link=publish_result.s(os.getenv('SCRAPPER_RESULTS_QUEUE')))
-            break
+                process_sale.delay(await el.get_attribute('href'))
+                return
 
 
 @celeryapp.task
 async def publish_result(result, queue_name):
-    print(result, queue_name)
     connection = await aio_pika.connect_robust(
-        os.environ('BROKER_URL'), 
+        os.getenv('BROKER_URL'), 
     )
     async with connection:
         channel = await connection.channel()
+        await channel.declary_queue(queue_name, durable=True)
         await channel.default_exchange.publish(
-            aio_pika.Message(body=json.dumps(result)),
+            aio_pika.Message(body=json.dumps(result).encode()),
             routing_key=queue_name,
         )
         await connection.close()
@@ -108,64 +109,64 @@ async def get_following_sibling_desc(session, *queries, converter=None):
 @celeryapp.task
 # @profile
 async def get_cian_sale_info(sale_url):
-        service = services.Remote(os.getenv('SELENIUM_REMOTE_URL'))
-        browser = browsers.Firefox()
-        result = None
-        async with get_session(service, browser) as session:
-            await session.get(sale_url)
-            print(await session.get_element("title", SelectorType.tag_name))
-            sale_id = re.search(r"\/(?P<sale_id>\d+)\/", sale_url)['sale_id']
-            price_str = (
-                await get_element_text(session, "//span[@itemprop='price']", SelectorType.xpath) or
-                await get_element_text(session, "//div[@data-name='PriceInfo']//span", SelectorType.xpath)
-            )
-            price_sep = re.search(r"\s", price_str[::-1]).group(0)
-            price, _, price_currency = price_str.rpartition(price_sep)
-            # print(price_str, ord(price_sep))
-            price = int(re.search(r"\d+", price.replace(" ", "")).group())
-            price_currency = CURRENCY_SYMBOL_TO_NAME.get(price_currency, price_currency)
-            # print(driver.find_element(By.XPATH, "//*[@data-name='UndergroundIcon']/ancestor::li").get_attribute('innerHTML'))
-            # global DEBUG
-            # DEBUG = True
-            # get_following_sibling_desc(driver, "Общая площадь", converter=parse_float)
-            # DEBUG = False
-            result =  dict(
-                sale_id=sale_id,
-                num_room=await get_element_text(session, "//div[@data-name='OfferTitleNew']/h1", SelectorType.xpath),
-                price=price,
-                price_currency=price_currency,
-                address=await get_element_attribute(session, "//div[@data-name='Geo']/span[@itemprop='name']", SelectorType.xpath, "content"),
-                undergrounds=[
-                    dict(
-                        branch_color=await get_element_attribute(li, ".//*[@data-name='UndergroundIcon']", SelectorType.xpath, "fill"),
-                        station_name=await get_element_text(li, "a", SelectorType.tag_name),
-                        distance_in_min=parse_int(await get_element_text(li, "span", SelectorType.tag_name)),
-                        distance_in_min_transport=(
-                            (
-                                (await path.get_attribute("d"))[:3]
-                                if (path := await check_element(span, "path", SelectorType.tag_name))
-                                else (await span.get_text()).split(". ")[-1]
-                           )
-                            if (span := await check_element(li, "span", SelectorType.tag_name))
-                            else None
+    service = services.Remote(os.getenv('SELENIUM_REMOTE_URL'))
+    browser = browsers.Firefox()
+    result = None
+    async with get_session(service, browser) as session:
+        await session.get(sale_url)
+        print(await session.get_element("title", SelectorType.tag_name))
+        sale_id = re.search(r"\/(?P<sale_id>\d+)\/", sale_url)['sale_id']
+        price_str = (
+            await get_element_text(session, "//span[@itemprop='price']", SelectorType.xpath) or
+            await get_element_text(session, "//div[@data-name='PriceInfo']//span", SelectorType.xpath)
+        )
+        price_sep = re.search(r"\s", price_str[::-1]).group(0)
+        price, _, price_currency = price_str.rpartition(price_sep)
+        # print(price_str, ord(price_sep))
+        price = int(re.search(r"\d+", price.replace(" ", "")).group())
+        price_currency = CURRENCY_SYMBOL_TO_NAME.get(price_currency, price_currency)
+        # print(driver.find_element(By.XPATH, "//*[@data-name='UndergroundIcon']/ancestor::li").get_attribute('innerHTML'))
+        # global DEBUG
+        # DEBUG = True
+        # get_following_sibling_desc(driver, "Общая площадь", converter=parse_float)
+        # DEBUG = False
+        result =  dict(
+            sale_id=sale_id,
+            num_room=await get_element_text(session, "//div[@data-name='OfferTitleNew']/h1", SelectorType.xpath),
+            price=price,
+            price_currency=price_currency,
+            address=await get_element_attribute(session, "//div[@data-name='Geo']/span[@itemprop='name']", SelectorType.xpath, "content"),
+            undergrounds=[
+                dict(
+                    branch_color=await get_element_attribute(li, ".//*[@data-name='UndergroundIcon']", SelectorType.xpath, "fill"),
+                    station_name=await get_element_text(li, "a", SelectorType.tag_name),
+                    distance_in_min=parse_int(await get_element_text(li, "span", SelectorType.tag_name)),
+                    distance_in_min_transport=(
+                        (
+                            (await path.get_attribute("d"))[:3]
+                            if (path := await check_element(span, "path", SelectorType.tag_name))
+                            else (await span.get_text()).split(". ")[-1]
                         )
+                        if (span := await check_element(li, "span", SelectorType.tag_name))
+                        else None
                     )
-                    for li in await session.get_elements("//*[@data-name='UndergroundIcon']/ancestor::li", SelectorType.xpath)
-                ],
-                apartment_type=await get_following_sibling_desc(session, "Тип жилья"),
-                building_type=await get_following_sibling_desc(session, "Тип дома"),
-                decorating=await get_following_sibling_desc(session, "Отделка", "Ремонт"),
-                parking=await get_following_sibling_desc(session, "Парковка"),
-                full_sq=await get_following_sibling_desc(session, "Общая площадь", converter=parse_float),
-                life_sq=await get_following_sibling_desc(session, "Жилая площадь", converter=parse_float),
-                kitch_sq=await get_following_sibling_desc(session, "Площадь кухни", converter=parse_float),
-                height=await get_following_sibling_desc(session, "Высота потолков", converter=parse_float),
-                floor=await get_following_sibling_desc(session, "Этаж", converter=lambda x: parse_int(x.split()[0])),
-                max_floor=await get_following_sibling_desc(session, "Этаж", converter=lambda x: parse_int(x.split()[-1])),
-                build_year=await get_following_sibling_desc(session, "Год сдачи", "Год постройки", converter=parse_int),
-            )
-        print(result)
-        return result
+                )
+                for li in await session.get_elements("//*[@data-name='UndergroundIcon']/ancestor::li", SelectorType.xpath)
+            ],
+            apartment_type=await get_following_sibling_desc(session, "Тип жилья"),
+            building_type=await get_following_sibling_desc(session, "Тип дома"),
+            decorating=await get_following_sibling_desc(session, "Отделка", "Ремонт"),
+            parking=await get_following_sibling_desc(session, "Парковка"),
+            full_sq=await get_following_sibling_desc(session, "Общая площадь", converter=parse_float),
+            life_sq=await get_following_sibling_desc(session, "Жилая площадь", converter=parse_float),
+            kitch_sq=await get_following_sibling_desc(session, "Площадь кухни", converter=parse_float),
+            height=await get_following_sibling_desc(session, "Высота потолков", converter=parse_float),
+            floor=await get_following_sibling_desc(session, "Этаж", converter=lambda x: parse_int(x.split()[0])),
+            max_floor=await get_following_sibling_desc(session, "Этаж", converter=lambda x: parse_int(x.split()[-1])),
+            build_year=await get_following_sibling_desc(session, "Год сдачи", "Год постройки", converter=parse_int),
+        )
+    # print(result)
+    return result
 
 
 async def run_cian_link_collection():
