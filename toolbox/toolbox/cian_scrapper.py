@@ -60,7 +60,7 @@ async def get_cian_sale_links():
             for el in elements:
                 print(await el.get_attribute('href'))
                 process_sale.delay(await el.get_attribute('href'))
-                return
+            break
 
 
 @celeryapp.task
