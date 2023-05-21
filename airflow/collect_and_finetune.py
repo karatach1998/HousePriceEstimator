@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 import requests
@@ -12,6 +13,8 @@ from rabbitmq_provider.hooks.rabbitmq import RabbitMQHook
 from kubernetes import config, client, watch
 from kubernetes.client import models as k8s 
 
+
+logger = logging.getLogger("airflow.task")
 
 kube_namespace = "scrapper"
 
@@ -164,7 +167,7 @@ class RabbitMQEmptySensor(BaseSensorOperator):
     def poke(self, context):
         hook = RabbitMQHook(self.rabbitmq_conn_id)
         q = hook.declare_queue(self.queue_name, passive=True)
-        print(q.method, q.method.message_count)
+        logger.info("%s %d", q.method, q.method.message_count)
         return q.method.message_count == 0
 
 
