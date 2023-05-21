@@ -145,6 +145,7 @@ scrapper_worker_pod = lambda conn: (
                         k8s.V1EnvVar(name="BROKER_URL", value=Template(r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
                         k8s.V1EnvVar(name="CELERY_CUSTOM_WORKER_POOL", value="celery_aio_pool.pool:AsyncIOPool"),
                         k8s.V1EnvVar(name="CELERY_DEFAULT_QUEUE", value="tasks"),
+                        k8s.V1EnvVar(name="CELERY_IGNORE_RESULT", value="True"),
                         k8s.V1EnvVar(name="SELENIUM_REMOTE_URL", value="http://selenium:4444/wd/hub"),
                     ]
                 )
