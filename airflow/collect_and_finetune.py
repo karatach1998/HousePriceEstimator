@@ -166,7 +166,7 @@ class RabbitMQEmptySensor(BaseSensorOperator):
         return q.method.message_count == 0
 
 
-with DAG(dag_id="collect_and_finetune", start_date=datetime.now(), schedule="3 * * * *") as dag:
+with DAG(dag_id="collect_and_finetune", start_date='2023-05-20', schedule="31 * * * *") as dag:
     @task
     def create_selenium_hub():
         config.load_incluster_config()
