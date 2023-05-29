@@ -14,6 +14,7 @@ rabbitmq:
     existingErlangSecret: credentials
 
 redis:
+  architecture: standalone
   auth:
     enabled: false
 
