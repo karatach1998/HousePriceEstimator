@@ -1,7 +1,3 @@
-global:
-  redis:
-    password: password
-
 secrets:
   clickhousePassword: ""
   rabbitmqPassword: ""
@@ -53,3 +49,6 @@ airflow:
       revision: "HEAD"
       repoSubPath: "airflow"
       syncWait: 60
+  redis:
+    auth:
+      enabled: false
