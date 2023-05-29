@@ -13,6 +13,10 @@ rabbitmq:
     existingPasswordSecret: credentials
     existingErlangSecret: credentials
 
+redis:
+  auth:
+    enabled: false
+
 airflow:
   airflow:
     connections:
@@ -32,6 +36,7 @@ airflow:
         key: rabbitmq-password
     extraPipPackages:
       - "apache-airflow-providers-cncf-kubernetes"
+      - "apache-airflow-providers-http"
       - "airflow-provider-rabbitmq"
       - "kubernetes"
       - "requests"
