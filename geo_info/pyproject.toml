@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "geo-info"
+version = "0.1.0"
+description = ""
+authors = ["Sergey Karatach <karatach1998@yandex.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.95.2"
+uvicorn = {extras = ["standard"], version = "^0.22.0"}
+gunicorn = "^20.1.0"
+redis = "^4.5.5"
+numpy = "^1.24.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

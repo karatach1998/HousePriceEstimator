@@ -5,8 +5,11 @@ dependencies:
 - name: rabbitmq
   repository: https://charts.bitnami.com/bitnami
   version: 11.13.0
+- name: redis
+  repository: https://charts.bitnami.com/bitnami
+  version: 17.11.3
 - name: airflow
   repository: https://airflow-helm.github.io/charts
   version: 8.7.0
-digest: sha256:dbcc578c78683e12bc2caa4f8438781be25da6046293f53e23ca44250524973d
-generated: "2023-04-20T12:37:41.33923347+03:00"
+digest: sha256:67204b7fe29a59631339c1bb71c7647a845c1918020408fa8197fb6c30f320fe
+generated: "2023-05-30T01:05:35.893276449+03:00"

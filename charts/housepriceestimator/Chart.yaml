@@ -30,6 +30,9 @@ dependencies:
   - name: rabbitmq
     version: "11.13.0"
     repository: https://charts.bitnami.com/bitnami
+  - name: redis
+    version: "17.11.3"
+    repository: https://charts.bitnami.com/bitnami
   - name: airflow
     version: "8.7.0"
     repository: https://airflow-helm.github.io/charts

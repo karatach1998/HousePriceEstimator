@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geoinfo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: geoinfo
+  template:
+    metadata:
+      labels:
+        app: geoinfo
+    spec:
+      containers:
+        - name: geoinfo
+          image: ghcr.io/karatach1998/model-server:latest
+          imagePullPolicy: Always
+          command: ["poetry", "run", "uvicorn", "geoinfo.main:app", "--host=0.0.0.0", "--port=0060"]
+          ports:
+            - containerPort: 8060
+              protocol: TCP
