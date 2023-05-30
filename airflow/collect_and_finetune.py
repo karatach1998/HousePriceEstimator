@@ -170,7 +170,7 @@ scrapper_flower_pod = lambda conn: (
                     name="celery",
                     image="ghcr.io/karatach1998/cian-scrapper:latest",
                     image_pull_policy="Always",
-                    command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp flower --port=5555"],
+                    command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp flower --address=0.0.0.0 --port=5555"],
                     ports=[
                         k8s.V1ContainerPort(container_port=5555),
                     ],
