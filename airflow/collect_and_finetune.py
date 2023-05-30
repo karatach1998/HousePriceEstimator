@@ -247,8 +247,8 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
         config.load_incluster_config()
         core_api = client.CoreV1Api()
         core_api.create_namespaced_pod(body=scrapper_worker_pod(kwargs.get('conn')), namespace=kube_namespace)
-        # core_api.create_namespaced_pod(body=scrapper_flower_pod(kwargs.get('conn')), namespace=kube_namespace)
-        # core_api.create_namespaced_service(body=scrapper_flower_svc, namespace=kube_namespace)
+        core_api.create_namespaced_pod(body=scrapper_flower_pod(kwargs.get('conn')), namespace=kube_namespace)
+        core_api.create_namespaced_service(body=scrapper_flower_svc, namespace=kube_namespace)
 
     @task
     def delete_selenium_hub():
@@ -268,8 +268,8 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
     def delete_scrapper_worker():
         config.load_incluster_config()
         core_api = client.CoreV1Api()
-        # core_api.delete_namespaced_service(name="scrapper-flower", namespace=kube_namespace)
-        # core_api.delete_namespaced_pod(name="scrapper-flower", namespace=kube_namespace)
+        core_api.delete_namespaced_service(name="scrapper-flower", namespace=kube_namespace)
+        core_api.delete_namespaced_pod(name="scrapper-flower", namespace=kube_namespace)
         core_api.delete_namespaced_pod(name="scrapper-worker", namespace=kube_namespace)
 
     scrapper_producer = KubernetesPodOperator(
