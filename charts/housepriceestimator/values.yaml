@@ -37,7 +37,7 @@ airflow:
         password: ${RABBITMQ_PASSWORD}
       - id: http_flower
         type: http
-        host: scrapper-flower
+        host: scrapper-flower.scrapper.svc.cluster.local
         port: 5555
         schema: http
     connectionsTemplates:
