@@ -90,7 +90,7 @@ async def _publish_result(result, queue_name):
     )
     async with connection:
         channel = await connection.channel()
-        exchange = await channel.declare_exchange(queue_name, durable=True)
+        exchange = await channel.declare_exchange(queue_name, 'fanout', durable=True)
         queue = await channel.declare_queue(queue_name, durable=True)
         await queue.bind(exchange)
         await exchange.publish(
