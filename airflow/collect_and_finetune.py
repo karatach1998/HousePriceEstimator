@@ -142,9 +142,9 @@ scrapper_worker_pod = lambda conn: (
             containers=[
                 k8s.V1Container(
                     name="celery",
-                    image="ghcr.io/karatach1998/toolbox:latest",
+                    image="ghcr.io/karatach1998/cian_scrapper:latest",
                     image_pull_policy="Always",
-                    command=["/bin/sh", "-c", "ls -l . ; poetry run celery -A toolbox.cian_scrapper.celeryapp worker"],
+                    command=["/bin/sh", "-c", "ls -l . ; poetry run celery -A cian_scrapper.main.celeryapp worker"],
                     env=[
                         k8s.V1EnvVar(name="BROKER_URL", value=Template(r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
                         # k8s.V1EnvVar(name="CELERY_CUSTOM_WORKER_POOL", value="celery_aio_pool.pool:AsyncIOPool"),
@@ -168,9 +168,9 @@ scrapper_flower_pod = lambda conn: (
             containers=[
                 k8s.V1Container(
                     name="celery",
-                    image="ghcr.io/karatach1998/toolbox:latest",
+                    image="ghcr.io/karatach1998/cian_scrapper:latest",
                     image_pull_policy="Always",
-                    command=["/bin/sh", "-c", "poetry run celery -A toolbox.cian_scrapper.celeryapp flower --port=5555"],
+                    command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp flower --port=5555"],
                     ports=[
                         k8s.V1ContainerPort(container_port=5555),
                     ],
@@ -275,9 +275,9 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
     scrapper_producer = KubernetesPodOperator(
         task_id="scrape_sales_list",
         namespace=kube_namespace,
-        image="ghcr.io/karatach1998/toolbox:latest",
+        image="ghcr.io/karatach1998/cian_scrapper:latest",
         image_pull_policy="Always",
-        cmds=["poetry", "run", "python", "toolbox/cian_scrapper.py"],
+        cmds=["poetry", "run", "python", "cian_scrapper/main.py"],
         name="scrapper_producer",
         is_delete_operator_pod=True,
         env_vars={
