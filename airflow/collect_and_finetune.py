@@ -290,8 +290,8 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
 
     all_tasks_processed = HttpSensor(
         task_id='all_tasks_processed',
-        http_conn_id='http_default',
-        endpoint="http://scrapper-flower:5555/api/tasks?state=STARTED",
+        http_conn_id='http_flower',
+        endpoint="/api/tasks?state=STARTED",
         response_check=lambda response: len(response.json())
     )
     sales_infos_queue_empty = RabbitMQEmptySensor(queue_name="sales_info")

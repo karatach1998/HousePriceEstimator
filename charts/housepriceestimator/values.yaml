@@ -30,6 +30,10 @@ airflow:
         port: 5672
         login: user
         password: ${RABBITMQ_PASSWORD}
+      - id: http_flower
+        host: scrapper-flower
+        port: 5555
+        schema: http
     connectionsTemplates:
       RABBITMQ_PASSWORD:
         kind: secret
