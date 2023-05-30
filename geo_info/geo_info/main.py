@@ -70,7 +70,8 @@ async def count_food_within_radius_for_price_bounds(lon: float, lat: float, radi
 
 # shopping_center, big_market, fitness, swim_pool, ice_rink(каток), stadium, basketball, hospice, detention_facility, detention_facility, public_healthcare, university, workplaces, office, additional_education, preschool, school, big_church, church_synagogue, mosque, theater, museum, exhibition, catering, ecology
 async def nearest_organization(type: OrganizationTypeEnum, lon: float, lat: float, return_org: bool = False) -> float:
-    (org, distance), = await R.geosearch(f"organization:{type}", longitude=lon, latitude=lat, radius=200, unit='km', sort='DESC', count=1, withdist=True)
+    results = await R.geosearch(f"organization:{type}", longitude=lon, latitude=lat, radius=200, unit='km', sort='DESC', count=1, withdist=True)
+    org, distance = results[0] if len(results) > 0 else (None, math.nan)
     return (json.loads(org), distance) if return_org else distance
 
 
