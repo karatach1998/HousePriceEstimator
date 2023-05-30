@@ -23,7 +23,7 @@ NUCLEAR_COORDS = np.array([
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global R
-    R = redis.Redis(host=os.getenv("REDIS_SERVICE_HOST", "geoinfo-redis"), max_connections=10)
+    R = redis.Redis(host=os.getenv("HOUSEPRICEESTIMATOR_REDIS_MASTER_SERVICE_HOST", "geoinfo-redis"), max_connections=10)
     yield
     await R.close()
 
