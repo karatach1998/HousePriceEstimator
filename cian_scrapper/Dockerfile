@@ -15,4 +15,4 @@ COPY pyproject.toml poetry.lock /app/
 RUN poetry install
 COPY . .
 
-CMD ["poetry", "run", "python", "cian_scrapper/cian_scrapper.py"]
+CMD ["poetry", "run", "python", "cian_scrapper/main.py"]
