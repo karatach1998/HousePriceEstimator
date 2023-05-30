@@ -91,10 +91,12 @@ async def _publish_result(result, queue_name):
     async with connection:
         channel = await connection.channel()
         print("RESULT", result)
-        await channel.declare_queue(queue_name, durable=True)
-        await channel.default_exchange.publish(
+        exchange = await channel.declare_exchange(queue_name, durable=True)
+        queue = await channel.declare_queue(queue_name, durable=True)
+        await queue.bind(exchange)
+        await exchange.publish(
             aio_pika.Message(body=json.dumps(result).encode()),
-            routing_key=queue_name,
+            # routing_key=queue_name,
         )
         await connection.close()
 
