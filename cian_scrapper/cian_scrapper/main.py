@@ -58,7 +58,7 @@ def parse_float(s):
     return float(m.group()) if m is not None else None
 
 
-celeryapp = Celery('cian_scrapper.cian_scrapper')
+celeryapp = Celery('cian_scrapper.main')
 celeryapp.config_from_object(os.environ)
 
 
