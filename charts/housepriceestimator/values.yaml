@@ -50,5 +50,7 @@ airflow:
       repoSubPath: "airflow"
       syncWait: 60
   redis:
-    auth:
-      enabled: false
+    enabled: false
+  externalRedis:
+    host: redis
+    databaseNumber: 2
