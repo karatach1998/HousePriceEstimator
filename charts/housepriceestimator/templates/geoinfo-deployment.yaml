@@ -16,7 +16,7 @@ spec:
         - name: geoinfo
           image: ghcr.io/karatach1998/geoinfo:latest
           imagePullPolicy: Always
-          command: ["poetry", "run", "uvicorn", "geo_info.main:app", "--host=0.0.0.0", "--port=0060"]
+          command: ["poetry", "run", "uvicorn", "geo_info.main:app", "--host=0.0.0.0", "--port=8060"]
           ports:
             - containerPort: 8060
               protocol: TCP
