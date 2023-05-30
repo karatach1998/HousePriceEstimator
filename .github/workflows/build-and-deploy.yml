@@ -47,7 +47,7 @@ jobs:
           cache-from: type=registry,ref=ghcr.io/karatach1998/geoinfo:latest
           cache-to: type=inline
   
-  build-cian_scrapper:
+  build-cian-scrapper:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -65,14 +65,14 @@ jobs:
           context: ./cian_scrapper
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/cian_scrapper:latest
-            ghcr.io/${{ github.repository_owner }}/cian_scrapper:${{ github.sha }}
-          cache-from: type=registry,ref=ghcr.io/karatach1998/cian_scrapper:latest
+            ghcr.io/${{ github.repository_owner }}/cian-scrapper:latest
+            ghcr.io/${{ github.repository_owner }}/cian-scrapper:${{ github.sha }}
+          cache-from: type=registry,ref=ghcr.io/karatach1998/cian-scrapper:latest
           cache-to: type=inline
   
   deploy-to-k8s:
     runs-on: ubuntu-latest
-    needs: [build-model-server, build-geoinfo, build-cian_scrapper]
+    needs: [build-model-server, build-geoinfo, build-cian-scrapper]
     steps:
       - uses: actions/checkout@v1
       - name: Helm Deploy

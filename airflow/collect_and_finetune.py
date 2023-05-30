@@ -142,7 +142,7 @@ scrapper_worker_pod = lambda conn: (
             containers=[
                 k8s.V1Container(
                     name="celery",
-                    image="ghcr.io/karatach1998/cian_scrapper:latest",
+                    image="ghcr.io/karatach1998/cian-scrapper:latest",
                     image_pull_policy="Always",
                     command=["/bin/sh", "-c", "ls -l . ; poetry run celery -A cian_scrapper.main.celeryapp worker"],
                     env=[
@@ -168,7 +168,7 @@ scrapper_flower_pod = lambda conn: (
             containers=[
                 k8s.V1Container(
                     name="celery",
-                    image="ghcr.io/karatach1998/cian_scrapper:latest",
+                    image="ghcr.io/karatach1998/cian-scrapper:latest",
                     image_pull_policy="Always",
                     command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp flower --port=5555"],
                     ports=[
@@ -275,7 +275,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
     scrapper_producer = KubernetesPodOperator(
         task_id="scrape_sales_list",
         namespace=kube_namespace,
-        image="ghcr.io/karatach1998/cian_scrapper:latest",
+        image="ghcr.io/karatach1998/cian-scrapper:latest",
         image_pull_policy="Always",
         cmds=["poetry", "run", "python", "cian_scrapper/main.py"],
         name="scrapper_producer",
