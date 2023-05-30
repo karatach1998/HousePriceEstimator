@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: geoinfo
-          image: ghcr.io/karatach1998/model-server:latest
+          image: ghcr.io/karatach1998/geoinfo:latest
           imagePullPolicy: Always
           command: ["poetry", "run", "uvicorn", "geo_info.main:app", "--host=0.0.0.0", "--port=0060"]
           ports:
