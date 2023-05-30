@@ -6,13 +6,17 @@ authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.10,<3.11"
 janus = "^1.0.0"
 asyncio-pool = "^0.6.0"
 arsenic = "^21.8"
 aio-pika = "^9.0.5"
-celery-aio-pool = "^0.1.0rc5"
 celery = {git = "https://github.com/ShaheedHaque/celery.git", rev = "srh_feature_add_on_pools"}
+flower = "^1.2.0"
+celery-aio-pool = "^0.1.0rc5"
+aiohttp = "^3.8.4"
+httpx = "^0.24.1"
+geopy = "^2.3.0"
 
 
 [tool.poetry.group.dev.dependencies]

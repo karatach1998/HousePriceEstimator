@@ -2,14 +2,16 @@ import re
 import os
 import json
 import asyncio
-from functools import cached_property
+from datetime import datetime
+from urllib.parse import parse_qs, urlparse
 
 import aio_pika
+import geopy
+import httpx
 from arsenic import get_session, browsers, services, errors
 from arsenic.session import Element, Session
 from arsenic.constants import SelectorType
-from celery import chain, Celery, Task
-from celery.signals import worker_init, worker_shutting_down
+from celery import chain, Celery
 
 
 CURRENCY_SYMBOL_TO_NAME = {
@@ -20,6 +22,24 @@ CURRENCY_SYMBOL_TO_NAME = {
 SVG_DATA_HEAD_TO_TRANSPORT = {
     'M10': 'пешком',
     'M14': 'на транспорте',
+}
+UNDERGROUND_COLOR_TO_LINE = {
+    "#CF0000": "1",
+    "#00701A": "2",
+    "#03238B": "3",
+    "#009BD5": "4",
+    "#00701A": "5",
+    "#FF7F00": "6",
+    "#94007C": "7",
+    "#FFCD1E": "8",
+    "#FFDF00": "8А",
+    "#A2A5B5": "9",
+    "#8AD02A": "10",
+    "#78C7C9": "11",
+    "#BAC8E8": "12",
+    "#0072B9": "13",
+    "#FFC8C8": "14",
+    "#D68AB1": "15",
 }
 INT_REGEX = re.compile(r"\d+")
 FLOAT_REGEX = re.compile(r"\d+(\.\d+)?")
@@ -42,9 +62,9 @@ celeryapp = Celery('toolbox.cian_scrapper')
 celeryapp.config_from_object(os.environ)
 
 
-async def get_cian_sale_links():
+async def collect_cian_sale_links():
     url = "https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&offer_type=flat&p={p}&region=1"
-    process_sale = chain(get_cian_sale_info.s(), publish_result.s(os.getenv('SCRAPPER_RESULTS_QUEUE')))
+    process_sale = chain(get_cian_sale_info.s() | populate_with_area_info.s(), publish_result.s(os.getenv('SCRAPPER_RESULTS_QUEUE')))
     total_sales = None
     sales_scrapped = 0
     page_index = 1
@@ -60,11 +80,11 @@ async def get_cian_sale_links():
             for el in elements:
                 print(await el.get_attribute('href'))
                 process_sale.delay(await el.get_attribute('href'))
+                return
             break
 
 
-@celeryapp.task
-async def publish_result(result, queue_name):
+async def _publish_result(result, queue_name):
     connection = await aio_pika.connect_robust(
         os.getenv('BROKER_URL'), 
     )
@@ -76,6 +96,11 @@ async def publish_result(result, queue_name):
             routing_key=queue_name,
         )
         await connection.close()
+
+
+@celeryapp.task
+def publish_result(result, queue_name):
+    return asyncio.get_event_loop().run_until_complete(_publish_result(result, queue_name))
 
 
 async def check_element(session_or_element: Session | Element, sel: str, sel_type: SelectorType) -> Element | None:
@@ -106,9 +131,7 @@ async def get_following_sibling_desc(session, *queries, converter=None):
     return (converter(e) if converter is not None else e) if e is not None else None
 
 
-@celeryapp.task
-# @profile
-async def get_cian_sale_info(sale_url):
+async def _get_cian_sale_info(sale_url):
     service = services.Remote(os.getenv('SELENIUM_REMOTE_URL'))
     browser = browsers.Firefox()
     result = None
@@ -125,6 +148,9 @@ async def get_cian_sale_info(sale_url):
         # print(price_str, ord(price_sep))
         price = int(re.search(r"\d+", price.replace(" ", "")).group())
         price_currency = CURRENCY_SYMBOL_TO_NAME.get(price_currency, price_currency)
+
+        map_desc_href = await (await session.get_element("//section[@data-name='NewbuildingMapWrapper']//a[@target='_blank']", SelectorType.xpath)).get_attribute('href')
+        latitude, longitude = list(map(float, parse_qs(urlparse(map_desc_href).query)["center"][0].split(',')))
         # print(driver.find_element(By.XPATH, "//*[@data-name='UndergroundIcon']/ancestor::li").get_attribute('innerHTML'))
         # global DEBUG
         # DEBUG = True
@@ -132,27 +158,31 @@ async def get_cian_sale_info(sale_url):
         # DEBUG = False
         result =  dict(
             sale_id=sale_id,
+            timestamp=datetime.now().timestamp(),
+            coords=dict(latitude=latitude, longitude=longitude),
+            address=await get_element_attribute(session, "//div[@data-name='Geo']/span[@itemprop='name']", SelectorType.xpath, "content"),
+            district=geopy.geocoders.Nominatim(user_agent="HousePriceEstimator").reverse((latitude, longitude)).raw['address']['suburb'],
             num_room=await get_element_text(session, "//div[@data-name='OfferTitleNew']/h1", SelectorType.xpath),
             price=price,
             price_currency=price_currency,
-            address=await get_element_attribute(session, "//div[@data-name='Geo']/span[@itemprop='name']", SelectorType.xpath, "content"),
-            undergrounds=[
-                dict(
-                    branch_color=await get_element_attribute(li, ".//*[@data-name='UndergroundIcon']", SelectorType.xpath, "fill"),
-                    station_name=await get_element_text(li, "a", SelectorType.tag_name),
-                    distance_in_min=parse_int(await get_element_text(li, "span", SelectorType.tag_name)),
-                    distance_in_min_transport=(
-                        (
-                            (await path.get_attribute("d"))[:3]
-                            if (path := await check_element(span, "path", SelectorType.tag_name))
-                            else (await span.get_text()).split(". ")[-1]
-                        )
-                        if (span := await check_element(li, "span", SelectorType.tag_name))
-                        else None
-                    )
-                )
-                for li in await session.get_elements("//*[@data-name='UndergroundIcon']/ancestor::li", SelectorType.xpath)
-            ],
+            # undergrounds=sorted((
+            #     dict(
+            #         line=UNDERGROUND_COLOR_TO_LINE.get(await get_element_attribute(li, ".//*[@data-name='UndergroundIcon']", SelectorType.xpath, "fill")),
+            #         station_name=await get_element_text(li, "a", SelectorType.tag_name),
+            #         distance_in_min=parse_int(await get_element_text(li, "span", SelectorType.tag_name)),
+            #         distance_in_min_transport=(
+            #             int(
+            #                 (await path.get_attribute("d"))[:3]
+            #                 if (path := await check_element(span, "path", SelectorType.tag_name))
+            #                 else (await span.get_text()).split(". ")[-1]
+            #             )
+            #             if (span := await check_element(li, "span", SelectorType.tag_name))
+            #             else None
+            #         )
+            #     )
+            #     for li in await session.get_elements("//*[@data-name='UndergroundIcon']/ancestor::li", SelectorType.xpath)
+            #     if await get_element_attribute(li, ".//*[@data-name='UndergroundIcon']", SelectorType.xpath, "fill") in UNDERGROUND_COLOR_TO_LINE
+            # ), key=lambda u: (u['distance_in_min_transport'] or 0) * 1000 + (u['distance_in_min'] or 0))[:2],
             apartment_type=await get_following_sibling_desc(session, "Тип жилья"),
             building_type=await get_following_sibling_desc(session, "Тип дома"),
             decorating=await get_following_sibling_desc(session, "Отделка", "Ремонт"),
@@ -169,11 +199,24 @@ async def get_cian_sale_info(sale_url):
     return result
 
 
-async def run_cian_link_collection():
-    print('RUN')
-    await get_cian_sale_links()
-        
+@celeryapp.task
+def get_cian_sale_info(sale_url):
+    return asyncio.get_event_loop().run_until_complete(_get_cian_sale_info(sale_url))
+
+
+async def _populate_with_area_info(result):
+    geoinfo_base_url = os.getenv("GEOINFO_BASE_URL")
+    async with httpx.AsyncClient() as client:
+        geoinfo_resp = await client.get(f"{geoinfo_base_url}/describe_area", params=result['coords'])
+        result.update(geoinfo_resp.json())
+    return result
+
+
+@celeryapp.task
+def populate_with_area_info(result):
+    return asyncio.get_event_loop().run_until_complete(_populate_with_area_info(result))
+
 
 if __name__ == '__main__':
-    asyncio.run(run_cian_link_collection())
-    # asyncio.run(get_cian_sale_info("https://www.cian.ru/sale/flat/276096419/"))
+    asyncio.run(collect_cian_sale_links())
+    # asyncio.run(get_cian_sale_info("https://www.cian.ru/sale/flat/276096417/"))

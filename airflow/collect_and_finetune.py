@@ -6,6 +6,7 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.exceptions import AirflowFailException
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+from airflow.providers.http.sensors.http import HttpSensor
 from airflow.sensors.base import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
 from jinja2 import Template
@@ -143,12 +144,13 @@ scrapper_worker_pod = lambda conn: (
                     name="celery",
                     image="ghcr.io/karatach1998/toolbox:latest",
                     image_pull_policy="Always",
-                    command=["/bin/sh", "-c", "ls -l . ; poetry run celery -A toolbox.cian_scrapper.celeryapp worker --pool=custom"],
+                    command=["/bin/sh", "-c", "ls -l . ; poetry run celery -A toolbox.cian_scrapper.celeryapp worker"],
                     env=[
                         k8s.V1EnvVar(name="BROKER_URL", value=Template(r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
-                        k8s.V1EnvVar(name="CELERY_CUSTOM_WORKER_POOL", value="celery_aio_pool.pool:AsyncIOPool"),
+                        # k8s.V1EnvVar(name="CELERY_CUSTOM_WORKER_POOL", value="celery_aio_pool.pool:AsyncIOPool"),
                         k8s.V1EnvVar(name="CELERY_DEFAULT_QUEUE", value="tasks"),
                         k8s.V1EnvVar(name="CELERY_IGNORE_RESULT", value="True"),
+                        k8s.V1EnvVar(name="GEOINFO_BASE_URL", value="http://geoinfo.default.svc.cluster.local:8060"),
                         k8s.V1EnvVar(name="SELENIUM_REMOTE_URL", value="http://selenium:4444/wd/hub"),
                     ]
                 )
@@ -156,6 +158,47 @@ scrapper_worker_pod = lambda conn: (
         )
     )
 )
+
+scrapper_flower_pod = lambda conn: (
+    k8s.V1Pod(
+        metadata=k8s.V1ObjectMeta(
+            name="scrapper-flower",
+        ),
+        spec=k8s.V1PodSpec(
+            containers=[
+                k8s.V1Container(
+                    name="celery",
+                    image="ghcr.io/karatach1998/toolbox:latest",
+                    image_pull_policy="Always",
+                    command=["/bin/sh", "-c", "poetry run celery -A toolbox.cian_scrapper.celeryapp flower --port=5555"],
+                    ports=[
+                        k8s.V1ContainerPort(container_port=5555),
+                    ],
+                    env=[
+                        k8s.V1EnvVar(name="BROKER_URL", value=Template(r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
+                        k8s.V1EnvVar(name="CLELERY_DEFAULT_QUEUE", value="tasks"),
+                    ]
+                )
+            ]
+        )
+    )
+)
+
+scrapper_flower_svc = (
+    k8s.V1Service(
+        metadata=k8s.V1ObjectMeta(
+            name="scrapper-flower"
+        ),
+        spec=k8s.V1ServiceSpec(
+            type='ClusterIP',
+            selector=dict(app="scrapper-flower"),
+            ports=[
+                k8s.V1ServicePort(port=5555, target_port=5555),
+            ]
+        )
+    )
+)
+
 
 class RabbitMQEmptySensor(BaseSensorOperator):
     @apply_defaults
@@ -204,6 +247,8 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
         config.load_incluster_config()
         core_api = client.CoreV1Api()
         core_api.create_namespaced_pod(body=scrapper_worker_pod(kwargs.get('conn')), namespace=kube_namespace)
+        core_api.create_namespaced_pod(body=scrapper_flower_pod(kwargs.get('conn')), namespace=kube_namespace)
+        core_api.create_namespaced_service(body=scrapper_flower_svc, namespace=kube_namespace)
 
     @task
     def delete_selenium_hub():
@@ -223,6 +268,8 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
     def delete_scrapper_worker():
         config.load_incluster_config()
         core_api = client.CoreV1Api()
+        core_api.delete_namespaced_service(name="scrapper-flower", namespace=kube_namespace)
+        core_api.delete_namespaced_pod(name="scrapper-flower", namespace=kube_namespace)
         core_api.delete_namespaced_pod(name="scrapper-worker", namespace=kube_namespace)
 
     scrapper_producer = KubernetesPodOperator(
@@ -241,17 +288,22 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
         },
     )
 
-    tasks_queue_empty = RabbitMQEmptySensor(queue_name="tasks")
+    all_tasks_processed = HttpSensor(
+        task_id='all_tasks_processed',
+        http_conn_id='http_default',
+        endpoint="http://scrapper-flower:5555/api/tasks?state=STARTED",
+        response_check=lambda response: len(response.json())
+    )
     sales_infos_queue_empty = RabbitMQEmptySensor(queue_name="sales_info")
 
     @task
     def finetune_model():
-        return requests.get("model-server:8080/finetune").status_code == 200
+        return requests.get("model-server:8100/finetune").status_code == 200
 
     (
         create_selenium_hub() >> create_selenium_node()
         >> [scrapper_producer, create_scrapper_worker()]
-        >> tasks_queue_empty >> delete_scrapper_worker()
+        >> all_tasks_processed >> delete_scrapper_worker()
         >> delete_selenium_node() >> delete_selenium_hub()
         >> sales_infos_queue_empty
         >> finetune_model()
