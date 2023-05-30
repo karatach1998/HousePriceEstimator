@@ -52,5 +52,5 @@ airflow:
   redis:
     enabled: false
   externalRedis:
-    host: redis
+    host: housepriceestimator-redis-master
     databaseNumber: 2
