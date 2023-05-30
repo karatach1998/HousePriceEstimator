@@ -163,6 +163,7 @@ scrapper_flower_pod = lambda conn: (
     k8s.V1Pod(
         metadata=k8s.V1ObjectMeta(
             name="scrapper-flower",
+            labels=dict(app="scrapper-flower")
         ),
         spec=k8s.V1PodSpec(
             containers=[
