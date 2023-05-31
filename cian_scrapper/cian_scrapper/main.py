@@ -95,7 +95,7 @@ async def _publish_result(result, queue_name):
         await queue.bind(exchange)
         await exchange.publish(
             aio_pika.Message(body=json.dumps(result).encode()),
-            # routing_key=queue_name,
+            routing_key=queue_name,
         )
         await connection.close()
 
