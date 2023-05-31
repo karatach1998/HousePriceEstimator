@@ -97,7 +97,6 @@ async def _publish_result(result, queue_name):
             aio_pika.Message(body=json.dumps(result).encode()),
             routing_key=queue_name,
         )
-        await connection.close()
 
 
 @celeryapp.task
