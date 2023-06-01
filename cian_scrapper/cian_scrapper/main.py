@@ -86,7 +86,7 @@ async def collect_cian_sale_links():
 
 
 @celeryapp.task
-async def publish_result(result, table_name):
+def publish_result(result, table_name):
     client = clickhouse_connect.get_client(
         host=os.getenv('CLICKHOUSE_HOST', "clickhouse"), 
         username=os.getenv('CLICKHOUSE_USERNAME', "default"), 
