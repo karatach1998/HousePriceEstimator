@@ -43,6 +43,7 @@ UNDERGROUND_COLOR_TO_LINE = {
 }
 INT_REGEX = re.compile(r"\d+")
 FLOAT_REGEX = re.compile(r"\d+(\.\d+)?")
+NUM_ROOMS_REGEX = re.compile(r"^(\d+|\w+)")
 DEBUG = False
 
 
@@ -68,8 +69,7 @@ async def collect_cian_sale_links():
     total_sales = None
     sales_scrapped = 0
     page_index = 1
-    service = services.Remote(os.getenv('SELENIUM_REMOTE_URL'))
-    browser = browsers.Firefox()
+    service = services.Remote(os.getenv('SELENIUM_REMOTE_URL'))jk
     async with get_session(service, browser) as session:
         while total_sales is None or sales_scrapped < total_sales:
             await session.get(url.format(p=page_index))
@@ -139,7 +139,7 @@ async def _get_cian_sale_info(sale_url):
     async with get_session(service, browser) as session:
         await session.get(sale_url)
         print(await session.get_element("title", SelectorType.tag_name))
-        sale_id = re.search(r"\/(?P<sale_id>\d+)\/", sale_url)['sale_id']
+        sale_id = int(re.search(r"\/(?P<sale_id>\d+)\/", sale_url)['sale_id'])
         price_str = (
             await get_element_text(session, "//span[@itemprop='price']", SelectorType.xpath) or
             await get_element_text(session, "//div[@data-name='PriceInfo']//span", SelectorType.xpath)
@@ -159,11 +159,11 @@ async def _get_cian_sale_info(sale_url):
         # DEBUG = False
         result =  dict(
             sale_id=sale_id,
-            timestamp=datetime.now().timestamp(),
+            timestamp=int(datetime.now().timestamp()),
             coords=dict(latitude=latitude, longitude=longitude),
             address=await get_element_attribute(session, "//div[@data-name='Geo']/span[@itemprop='name']", SelectorType.xpath, "content"),
             district=geopy.geocoders.Nominatim(user_agent="HousePriceEstimator").reverse((latitude, longitude)).raw['address']['suburb'],
-            num_room=await get_element_text(session, "//div[@data-name='OfferTitleNew']/h1", SelectorType.xpath),
+            num_room=m[1] if (m := NUM_ROOMS_REGEX.search(await get_element_text(session, "//div[@data-name='OfferTitleNew']/h1", SelectorType.xpath))) else None,
             price=price,
             price_currency=price_currency,
             # undergrounds=sorted((
