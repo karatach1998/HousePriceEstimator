@@ -1,16 +1,17 @@
+import _ from 'underscore';
 import { useState, useEffect } from 'react';
 import { YMaps, Map, Placemark, ZoomControl, GeolocationControl } from '@pbe/react-yandex-maps';
 import { Streamlit } from 'streamlit-component-lib';
 // import { useRenderData } from 'streamlit-component-lib-react-hooks';
 
-const DEFAULT_POS = [55.75, 37.5];
+const DEFAULT_POS = {latitude: 55.75, longitude: 37.5};
 
 const YMapApp = () => {
   const [renderData, setRenderData] = useState();
   const {label, pos: initialPos} = renderData?.args ?? {};
   const [pos, setPos] = useState(initialPos ?? DEFAULT_POS);
 
-  const mapState = { center: [55.75, 37.5], zoom: 9 };
+  const mapState = { center: _.values(pos), zoom: 9 };
 
   useEffect(() => {
     const onRenderEvent = (event) => {
@@ -36,10 +37,10 @@ const YMapApp = () => {
         {label != null && (
           <label>{label}</label>
         )}
-        <Map defaultState={mapState} width={"100%"} height={"auto"} options={{autoFitToViewport: true}} onClick={e => setPos(e._sourceEvent.originalEvent.coords)}>
+        <Map defaultState={mapState} width={"100%"} height={"auto"} options={{autoFitToViewport: true}} onClick={e => setPos(_.object(['latitude', 'longitude'], e._sourceEvent.originalEvent.coords))}>
           <GeolocationControl />
           <ZoomControl />
-          <Placemark geometry={pos} properties={{balloonContent: "Адрес"}} options={{preset: 'islands#blueHomeIcon'}} />
+          <Placemark geometry={_.values(pos)} properties={{balloonContent: "Адрес"}} options={{preset: 'islands#blueHomeIcon'}} />
         </Map>
       </YMaps>
   );
