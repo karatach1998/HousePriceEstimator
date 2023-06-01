@@ -267,6 +267,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
         image_pull_policy="Always",
         cmds=["poetry", "run", "python", "cian_scrapper/main.py"],
         name="scrapper_producer",
+        startup_timeout_seconds=300,
         is_delete_operator_pod=True,
         env_vars={
             "BROKER_URL": r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/",
