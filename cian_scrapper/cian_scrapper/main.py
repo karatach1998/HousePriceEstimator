@@ -8,8 +8,9 @@ from urllib.parse import parse_qs, urlparse
 import geopy
 import httpx
 from arsenic import get_session, browsers, services, errors
-from arsenic.session import Element, Session
+from arsenic.errors import NoSuchElement
 from arsenic.constants import SelectorType
+from arsenic.session import Element, Session
 from celery import chain, Celery
 from clickhouse_driver import Client as ClickHouseClient
 
@@ -148,7 +149,7 @@ async def _get_cian_sale_info(sale_url):
         address = await get_element_attribute(session, "//div[@data-name='Geo']/span[@itemprop='name']", SelectorType.xpath, "content")
         try:
             map_desc_href = await (await session.get_element("//section[@data-name='NewbuildingMapWrapper']//a[@target='_blank' or @target='_self']", SelectorType.xpath)).get_attribute('href')
-        except:
+        except NoSuchElement:
             inline_script = await (await session.get_element("//body/script[@type='text/javascript'][contains(text(), 'coordinates')]")).get_text()
             m = json.loads(re.search(r'\"coordinates\":(\{["\w\d\.\,\:]+\})', inline_script)[1])
             # geopy_location = geopy.geocoders.Nominatim(user_agent="HousePriceEstimator").geocode(address)
