@@ -35,6 +35,11 @@ airflow:
         port: 5672
         login: user
         password: ${RABBITMQ_PASSWORD}
+      - id: clickhouse_default
+        type: clickhouse
+        host: housepriceestimator-clickhouse.default.svc.cluster.local
+        login: default
+        password: ${CLICKHOUSE_PASSWORD}
       - id: http_flower
         type: http
         host: scrapper-flower.scrapper.svc.cluster.local
@@ -45,6 +50,10 @@ airflow:
         kind: secret
         name: credentials
         key: rabbitmq-password
+      CLICKHOUSE_PASSWORD:
+        kind: secret
+        name: credentials
+        key: clickhouse-password
     extraPipPackages:
       - "apache-airflow-providers-cncf-kubernetes"
       - "apache-airflow-providers-http"

@@ -5,7 +5,7 @@ import asyncio
 from datetime import datetime
 from urllib.parse import parse_qs, urlparse
 
-import aio_pika
+import clickhouse_connect
 import geopy
 import httpx
 from arsenic import get_session, browsers, services, errors
@@ -65,7 +65,7 @@ celeryapp.config_from_object(os.environ)
 
 async def collect_cian_sale_links():
     url = "https://www.cian.ru/cat.php?deal_type=sale&engine_version=2&offer_type=flat&p={p}&region=1"
-    process_sale = chain(get_cian_sale_info.s() | populate_with_area_info.s(), publish_result.s(os.getenv('SCRAPPER_RESULTS_QUEUE')))
+    process_sale = chain(get_cian_sale_info.s() | populate_with_area_info.s(), publish_result.s(os.getenv('SCRAPPER_RESULTS_TABLE')))
     total_sales = None
     sales_scrapped = 0
     page_index = 1
@@ -85,24 +85,15 @@ async def collect_cian_sale_links():
             break
 
 
-async def _publish_result(result, queue_name):
-    connection = await aio_pika.connect_robust(
-        os.getenv('BROKER_URL'), 
-    )
-    async with connection:
-        channel = await connection.channel()
-        exchange = await channel.declare_exchange(queue_name, 'fanout', durable=True)
-        queue = await channel.declare_queue(queue_name, durable=True)
-        await queue.bind(exchange)
-        await exchange.publish(
-            aio_pika.Message(body=json.dumps(result).encode()),
-            routing_key=queue_name,
-        )
-
-
 @celeryapp.task
-def publish_result(result, queue_name):
-    return asyncio.get_event_loop().run_until_complete(_publish_result(result, queue_name))
+async def publish_result(result, table_name):
+    client = clickhouse_connect.get_client(
+        host=os.getenv('CLICKHOUSE_HOST', "clickhouse"), 
+        username=os.getenv('CLICKHOUSE_USERNAME', "default"), 
+        password=os.getenv('CLICKHOUSE_PASSWORD', "password"), 
+    )
+    result['coords'] = list(result['coords'].items())
+    client.insert(table_name, [result.values()], column_names=result.keys(), database="default")
 
 
 async def check_element(session_or_element: Session | Element, sel: str, sel_type: SelectorType) -> Element | None:

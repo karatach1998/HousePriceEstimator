@@ -7,10 +7,8 @@ from airflow.decorators import task
 from airflow.exceptions import AirflowFailException
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from airflow.providers.http.sensors.http import HttpSensor
-from airflow.sensors.base import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
 from jinja2 import Template
-from rabbitmq_provider.hooks.rabbitmq import RabbitMQHook
 from kubernetes import config, client, watch
 from kubernetes.client import models as k8s 
 
@@ -150,6 +148,9 @@ scrapper_worker_pod = lambda conn: (
                         # k8s.V1EnvVar(name="CELERY_CUSTOM_WORKER_POOL", value="celery_aio_pool.pool:AsyncIOPool"),
                         k8s.V1EnvVar(name="CELERY_DEFAULT_QUEUE", value="tasks"),
                         k8s.V1EnvVar(name="CELERY_IGNORE_RESULT", value="True"),
+                        k8s.V1EnvVar(name="CLICKHOUSE_HOST", value=conn.clickhouse_default.host),
+                        k8s.V1EnvVar(name="CLICKHOUSE_USERNAME", value=conn.clickhouse_default.login),
+                        k8s.V1EnvVar(name="CLICKHOUSE_PASSWORD", value=conn.clickhouse_default.password),
                         k8s.V1EnvVar(name="GEOINFO_BASE_URL", value="http://geoinfo.default.svc.cluster.local:8060"),
                         k8s.V1EnvVar(name="SELENIUM_REMOTE_URL", value="http://selenium:4444/wd/hub"),
                     ]
@@ -199,20 +200,6 @@ scrapper_flower_svc = (
         )
     )
 )
-
-
-class RabbitMQEmptySensor(BaseSensorOperator):
-    @apply_defaults
-    def __init__(self, queue_name, rabbitmq_conn_id = 'rabbitmq_default', task_id = None, **kwargs):
-        super().__init__(task_id="wait_for_empty_{}_queue".format(queue_name) if task_id is None else task_id, **kwargs)
-        self.queue_name = queue_name
-        self.rabbitmq_conn_id = rabbitmq_conn_id
-
-    def poke(self, context):
-        hook = RabbitMQHook(self.rabbitmq_conn_id)
-        q = hook.declare_queue(self.queue_name, passive=True)
-        logger.info("%s %d", q.method, q.method.message_count)
-        return q.method.message_count == 0
 
 
 with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedule="10 * * * *") as dag:
@@ -284,7 +271,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
         env_vars={
             "BROKER_URL": r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/",
             "CELERY_DEFAULT_QUEUE": "tasks",
-            "SCRAPPER_RESULTS_QUEUE": "sales_info",
+            "SCRAPPER_RESULTS_TABLE": "sales_info",
             "SELENIUM_REMOTE_URL": "http://selenium:4444/wd/hub",
         },
     )
@@ -295,7 +282,6 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
         endpoint="/api/tasks?state=STARTED",
         response_check=lambda response: len(response.json())
     )
-    sales_infos_queue_empty = RabbitMQEmptySensor(queue_name="sales_info")
 
     @task
     def finetune_model():
