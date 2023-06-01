@@ -168,7 +168,7 @@ async def _get_cian_sale_info(sale_url):
             coords=dict(latitude=latitude, longitude=longitude),
             address=address,
             district=geopy_location.raw['address']['suburb'],
-            num_room=m[1] if (m := NUM_ROOMS_REGEX.search(await get_element_text(session, "//div[@data-name='OfferTitleNew']/h1", SelectorType.xpath))) else None,
+            num_room=m[1] if (m := NUM_ROOMS_REGEX.search(await get_element_text(session, "//div[starts-with(@data-name, 'OfferTitle')]/h1", SelectorType.xpath))) else None,
             price=price,
             price_currency=price_currency,
             # undergrounds=sorted((
