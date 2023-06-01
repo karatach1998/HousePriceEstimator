@@ -283,7 +283,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
             task_id=f'left_{state}_tasks',
             http_conn_id='http_flower',
             endpoint=f"/api/tasks?state={state}",
-            response_check=lambda response: len(response.json())
+            response_check=lambda response: len(response.json()) == 0
         ) for state in ('PENDING', 'RECEIVED', 'STARTED')
     ]
 
