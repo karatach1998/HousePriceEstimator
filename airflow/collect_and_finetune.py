@@ -5,7 +5,6 @@ import requests
 from airflow import DAG
 from airflow.decorators import task
 from airflow.exceptions import AirflowFailException
-from airflow.models.baseoperator import chain, cross_downstream
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from airflow.providers.http.sensors.http import HttpSensor
 from jinja2 import Template
@@ -290,9 +289,9 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 30), schedu
     def finetune_model():
         return requests.get("model-server:8100/finetune").status_code == 200
 
-    chain(
-        create_selenium_hub(), create_selenium_node(), create_scrapper_worker(),
-        scrapper_producer, all_tasks_processed,
-        delete_scrapper_worker(), delete_selenium_node(), delete_selenium_hub(),
-        finetune_model()
+    (
+        create_selenium_hub() >> create_selenium_node() >> create_scrapper_worker()
+        >> scrapper_producer >> all_tasks_processed
+        >> delete_scrapper_worker() >> delete_selenium_node() >> delete_selenium_hub()
+        >> finetune_model()
     )
