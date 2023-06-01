@@ -5,10 +5,9 @@ import requests
 from airflow import DAG
 from airflow.decorators import task
 from airflow.exceptions import AirflowFailException
-from airflow.models.baseoperator import cross_downstream
+from airflow.models.baseoperator import chain
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from airflow.providers.http.sensors.http import HttpSensor
-from airflow.utils.decorators import chain
 from jinja2 import Template
 from kubernetes import config, client, watch
 from kubernetes.client import models as k8s 
