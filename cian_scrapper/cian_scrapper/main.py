@@ -69,7 +69,8 @@ async def collect_cian_sale_links():
     total_sales = None
     sales_scrapped = 0
     page_index = 1
-    service = services.Remote(os.getenv('SELENIUM_REMOTE_URL'))jk
+    service = services.Remote(os.getenv('SELENIUM_REMOTE_URL'))
+    browser = browsers.Firefox()
     async with get_session(service, browser) as session:
         while total_sales is None or sales_scrapped < total_sales:
             await session.get(url.format(p=page_index))
