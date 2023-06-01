@@ -292,7 +292,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 30), schedu
 
     chain(
         create_selenium_hub(), create_selenium_node(),
-        scrapper_producer, create_scrapper_worker(), all_tasks_processed,
+        create_scrapper_worker(), scrapper_producer, all_tasks_processed,
         delete_scrapper_worker(), delete_selenium_node(), delete_selenium_hub(),
         finetune_model()
     )
