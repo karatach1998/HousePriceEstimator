@@ -202,7 +202,7 @@ scrapper_flower_svc = (
 )
 
 
-with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedule="10 * * * *") as dag:
+with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 30), schedule="10 * * * *") as dag:
     @task
     def create_selenium_hub():
         config.load_incluster_config()
