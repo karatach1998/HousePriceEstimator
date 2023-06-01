@@ -14,7 +14,7 @@ celery-aio-pool = "^0.1.0rc5"
 aiohttp = "^3.8.4"
 httpx = "^0.24.1"
 geopy = "^2.3.0"
-clickhouse-connect = "^0.5.25"
+clickhouse-driver = "^0.2.6"
 
 
 [tool.poetry.group.dev.dependencies]

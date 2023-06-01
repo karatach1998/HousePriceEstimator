@@ -5,13 +5,13 @@ import asyncio
 from datetime import datetime
 from urllib.parse import parse_qs, urlparse
 
-import clickhouse_connect
 import geopy
 import httpx
 from arsenic import get_session, browsers, services, errors
 from arsenic.session import Element, Session
 from arsenic.constants import SelectorType
 from celery import chain, Celery
+from clickhouse_driver import Client as ClickHouseClient
 
 
 CURRENCY_SYMBOL_TO_NAME = {
@@ -87,13 +87,16 @@ async def collect_cian_sale_links():
 
 @celeryapp.task
 def publish_result(result, table_name):
-    client = clickhouse_connect.get_client(
+    client = ClickHouseClient(
         host=os.getenv('CLICKHOUSE_HOST', "clickhouse"), 
         username=os.getenv('CLICKHOUSE_USERNAME', "default"), 
         password=os.getenv('CLICKHOUSE_PASSWORD', "password"), 
     )
     result['coords'] = list(result['coords'].items())
-    client.insert(table_name, [result.values()], column_names=result.keys(), database="default")
+    client.execute(
+        f"INSERT INTO {table_name} ({','.join(result.keys())})",
+        [result]
+    )
 
 
 async def check_element(session_or_element: Session | Element, sel: str, sel_type: SelectorType) -> Element | None:
