@@ -100,7 +100,7 @@ async def describe_area(longitude: float, latitude: float) -> dict:
     ]))
     f = lambda x: print(x) or x
     return f(distances_to_rings  | dict(
-        nuclear_km=nearest_nuclear_distance,
+        nuclear_reactor_km=nearest_nuclear_distance,
         subway_line=nearest_subway_line,
         subway_name=nearest_subway_name,
         subway_km=nearest_subway_distance,
