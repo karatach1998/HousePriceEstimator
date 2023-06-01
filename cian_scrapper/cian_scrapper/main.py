@@ -145,8 +145,17 @@ async def _get_cian_sale_info(sale_url):
         price = int(re.search(r"\d+", price.replace(" ", "")).group())
         price_currency = CURRENCY_SYMBOL_TO_NAME.get(price_currency, price_currency)
 
-        map_desc_href = await (await session.get_element("//section[@data-name='NewbuildingMapWrapper']//a[@target='_blank' or @target='_self']", SelectorType.xpath)).get_attribute('href')
-        latitude, longitude = list(map(float, parse_qs(urlparse(map_desc_href).query)["center"][0].split(',')))
+        address = await get_element_attribute(session, "//div[@data-name='Geo']/span[@itemprop='name']", SelectorType.xpath, "content")
+        try:
+            map_desc_href = await (await session.get_element("//section[@data-name='NewbuildingMapWrapper']//a[@target='_blank' or @target='_self']", SelectorType.xpath)).get_attribute('href')
+            latitude, longitude = list(map(float, parse_qs(urlparse(map_desc_href).query)["center"][0].split(',')))
+        except:
+            inline_script = await (await session.get_element("//body/script[@type='text/javascript'][contains(@text, 'coordinates')]")).get_text()
+            m = json.loads(re.search(r'\"coordinates\":(\{["\w\d\.\,\:]+\})', inline_script)[1])
+            # geopy_location = geopy.geocoders.Nominatim(user_agent="HousePriceEstimator").geocode(address)
+            latitude, longitude = float(m["lat"]), float(m["lng"])
+        finally:
+            geopy_location = geopy.geocoders.Nominatim(user_agent="HousePriceEstimator").reverse((latitude, longitude))
         # print(driver.find_element(By.XPATH, "//*[@data-name='UndergroundIcon']/ancestor::li").get_attribute('innerHTML'))
         # global DEBUG
         # DEBUG = True
@@ -156,8 +165,8 @@ async def _get_cian_sale_info(sale_url):
             sale_id=sale_id,
             timestamp=int(datetime.now().timestamp()),
             coords=dict(latitude=latitude, longitude=longitude),
-            address=await get_element_attribute(session, "//div[@data-name='Geo']/span[@itemprop='name']", SelectorType.xpath, "content"),
-            district=geopy.geocoders.Nominatim(user_agent="HousePriceEstimator").reverse((latitude, longitude)).raw['address']['suburb'],
+            address=address,
+            district=geopy_location.raw['address']['suburb'],
             num_room=m[1] if (m := NUM_ROOMS_REGEX.search(await get_element_text(session, "//div[@data-name='OfferTitleNew']/h1", SelectorType.xpath))) else None,
             price=price,
             price_currency=price_currency,
