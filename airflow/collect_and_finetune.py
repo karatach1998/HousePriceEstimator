@@ -202,7 +202,7 @@ scrapper_flower_svc = (
 )
 
 
-with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 30), schedule="10 * * * *") as dag:
+with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 30), schedule="0 0 * * *") as dag:
     @task
     def create_selenium_hub():
         config.load_incluster_config()
@@ -291,8 +291,8 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 30), schedu
         return requests.get("model-server:8100/finetune").status_code == 200
 
     chain(
-        create_selenium_hub(), create_selenium_node(),
-        create_scrapper_worker(), scrapper_producer, all_tasks_processed,
+        create_selenium_hub(), create_selenium_node(), create_scrapper_worker(),
+        scrapper_producer, all_tasks_processed,
         delete_scrapper_worker(), delete_selenium_node(), delete_selenium_hub(),
         finetune_model()
     )
