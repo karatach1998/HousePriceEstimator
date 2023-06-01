@@ -145,7 +145,7 @@ async def _get_cian_sale_info(sale_url):
         price = int(re.search(r"\d+", price.replace(" ", "")).group())
         price_currency = CURRENCY_SYMBOL_TO_NAME.get(price_currency, price_currency)
 
-        map_desc_href = await (await session.get_element("//section[@data-name='NewbuildingMapWrapper']//a[@target='_blank']", SelectorType.xpath)).get_attribute('href')
+        map_desc_href = await (await session.get_element("//section[@data-name='NewbuildingMapWrapper']//a[@target='_blank' or @target='_self']", SelectorType.xpath)).get_attribute('href')
         latitude, longitude = list(map(float, parse_qs(urlparse(map_desc_href).query)["center"][0].split(',')))
         # print(driver.find_element(By.XPATH, "//*[@data-name='UndergroundIcon']/ancestor::li").get_attribute('innerHTML'))
         # global DEBUG
