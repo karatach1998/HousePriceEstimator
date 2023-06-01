@@ -149,7 +149,7 @@ scrapper_worker_pod = lambda conn: (
                         k8s.V1EnvVar(name="CELERY_DEFAULT_QUEUE", value="tasks"),
                         k8s.V1EnvVar(name="CELERY_IGNORE_RESULT", value="True"),
                         k8s.V1EnvVar(name="CLICKHOUSE_HOST", value=conn.clickhouse_default.host),
-                        k8s.V1EnvVar(name="CLICKHOUSE_USERNAME", value=conn.clickhouse_default.login),
+                        k8s.V1EnvVar(name="CLICKHOUSE_USER", value=conn.clickhouse_default.login),
                         k8s.V1EnvVar(name="CLICKHOUSE_PASSWORD", value=conn.clickhouse_default.password),
                         k8s.V1EnvVar(name="GEOINFO_BASE_URL", value="http://geoinfo.default.svc.cluster.local:8060"),
                         k8s.V1EnvVar(name="SELENIUM_REMOTE_URL", value="http://selenium:4444/wd/hub"),

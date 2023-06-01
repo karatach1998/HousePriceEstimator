@@ -37,7 +37,7 @@ airflow:
         password: ${RABBITMQ_PASSWORD}
       - id: clickhouse_default
         type: clickhouse
-        host: housepriceestimator-clickhouse.default.svc.cluster.local
+        host: housepriceestimator-clickhouse-shard1-0.housepriceestimator-clickhouse-headless.default.svc.cluster.local
         login: default
         password: ${CLICKHOUSE_PASSWORD}
       - id: http_flower
@@ -57,7 +57,6 @@ airflow:
     extraPipPackages:
       - "apache-airflow-providers-cncf-kubernetes"
       - "apache-airflow-providers-http"
-      - "airflow-provider-rabbitmq"
       - "kubernetes"
       - "requests"
   dags:

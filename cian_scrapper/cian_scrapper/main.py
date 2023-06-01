@@ -89,13 +89,14 @@ async def collect_cian_sale_links():
 def publish_result(result, table_name):
     client = ClickHouseClient(
         host=os.getenv('CLICKHOUSE_HOST', "clickhouse"), 
-        username=os.getenv('CLICKHOUSE_USERNAME', "default"), 
+        user=os.getenv('CLICKHOUSE_USER', "default"), 
         password=os.getenv('CLICKHOUSE_PASSWORD', "password"), 
     )
-    result['coords'] = list(result['coords'].items())
+    result['coords'] = tuple(result['coords'][key] for key in ('latitude', 'longitude'))
     client.execute(
-        f"INSERT INTO {table_name} ({','.join(result.keys())})",
-        [result]
+        f"INSERT INTO {table_name} ({','.join(result.keys())}) VALUES",
+        [result],
+        settings=dict(input_format_null_as_default=True)
     )
 
 
