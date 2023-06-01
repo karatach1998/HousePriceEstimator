@@ -133,6 +133,7 @@ async def _get_cian_sale_info(sale_url):
     browser = browsers.Firefox()
     result = None
     async with get_session(service, browser) as session:
+        print(sale_url)
         await session.get(sale_url)
         print(await session.get_element("title", SelectorType.tag_name))
         sale_id = int(re.search(r"\/(?P<sale_id>\d+)\/", sale_url)['sale_id'])
