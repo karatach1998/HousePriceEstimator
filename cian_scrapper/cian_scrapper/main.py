@@ -148,14 +148,14 @@ async def _get_cian_sale_info(sale_url):
         address = await get_element_attribute(session, "//div[@data-name='Geo']/span[@itemprop='name']", SelectorType.xpath, "content")
         try:
             map_desc_href = await (await session.get_element("//section[@data-name='NewbuildingMapWrapper']//a[@target='_blank' or @target='_self']", SelectorType.xpath)).get_attribute('href')
-            latitude, longitude = list(map(float, parse_qs(urlparse(map_desc_href).query)["center"][0].split(',')))
         except:
             inline_script = await (await session.get_element("//body/script[@type='text/javascript'][contains(text(), 'coordinates')]")).get_text()
             m = json.loads(re.search(r'\"coordinates\":(\{["\w\d\.\,\:]+\})', inline_script)[1])
             # geopy_location = geopy.geocoders.Nominatim(user_agent="HousePriceEstimator").geocode(address)
             latitude, longitude = float(m["lat"]), float(m["lng"])
-        finally:
-            geopy_location = geopy.geocoders.Nominatim(user_agent="HousePriceEstimator").reverse((latitude, longitude))
+        else:
+            latitude, longitude = list(map(float, parse_qs(urlparse(map_desc_href).query)["center"][0].split(',')))
+        geopy_location = geopy.geocoders.Nominatim(user_agent="HousePriceEstimator").reverse((latitude, longitude))
         # print(driver.find_element(By.XPATH, "//*[@data-name='UndergroundIcon']/ancestor::li").get_attribute('innerHTML'))
         # global DEBUG
         # DEBUG = True
