@@ -291,7 +291,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 20), schedu
         return requests.get("model-server:8100/finetune").status_code == 200
 
     chain(
-        create_selenium_hub(), create_selenium_node()
+        create_selenium_hub(), create_selenium_node(),
         [scrapper_producer, create_scrapper_worker()],
         all_tasks_processed,
         delete_scrapper_worker(), delete_selenium_node(), delete_selenium_hub(),
