@@ -11,7 +11,8 @@ from arsenic import get_session, browsers, services, errors
 from arsenic.errors import NoSuchElement
 from arsenic.constants import SelectorType
 from arsenic.session import Element, Session
-from celery import chain, Celery
+from celery import chain, states, Celery
+from celery.exceptions import Ignore
 from clickhouse_driver import Client as ClickHouseClient
 
 
@@ -129,7 +130,7 @@ async def get_following_sibling_desc(session, *queries, converter=None):
     return (converter(e) if converter is not None else e) if e is not None else None
 
 
-async def _get_cian_sale_info(sale_url):
+async def _get_cian_sale_info(self, sale_url):
     service = services.Remote(os.getenv('SELENIUM_REMOTE_URL'))
     browser = browsers.Firefox()
     result = None
@@ -164,6 +165,9 @@ async def _get_cian_sale_info(sale_url):
             geopy_location = geopy_nominatim.geocode(dict(street=f"{await building.get_text()},{await street.get_text()}", city=await city.get_text()))
             latitude, longitude = geopy_location.latitude, geopy_location.longitude
         geopy_location = geopy_nominatim.reverse((latitude, longitude))
+        if 'address' not in geopy_location.raw:
+            self.update_state(state=states.FAILURE, reason="gropy_location.raw has not 'address' attribute")
+            raise Ignore()
         # print(driver.find_element(By.XPATH, "//*[@data-name='UndergroundIcon']/ancestor::li").get_attribute('innerHTML'))
         # global DEBUG
         # DEBUG = True
@@ -212,9 +216,9 @@ async def _get_cian_sale_info(sale_url):
     return result
 
 
-@celeryapp.task(retry_kwargs=dict(max_retries=2, countdown=60))
-def get_cian_sale_info(sale_url):
-    return asyncio.get_event_loop().run_until_complete(_get_cian_sale_info(sale_url))
+@celeryapp.task(bind=True, retry_kwargs=dict(max_retries=2, countdown=60))
+def get_cian_sale_info(self, sale_url):
+    return asyncio.get_event_loop().run_until_complete(_get_cian_sale_info(self, sale_url))
 
 
 async def _populate_with_area_info(result):
