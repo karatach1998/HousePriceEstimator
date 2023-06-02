@@ -190,17 +190,20 @@ st.title("Калькулятор стоимости жилья")
 # pos = None
 # if pos is None:
 ymap_component("Выбирите расположение дома", key='coords')
-st.info("%(latitude)f, %(longitude)f" % dict(st.session_state.coords))
-address_info = geopy.geocoders.Nominatim(user_agent="HousePriceEstimator").reverse("%(latitude)f, %(longitude)f" % st.session_state.coords) if 'coords' in st.session_state else None
+if st.session_state.coords is not None:
+    st.info("%(latitude)f, %(longitude)f" % dict(st.session_state.coords))
+address_info = geopy.geocoders.Nominatim(user_agent="HousePriceEstimator").reverse("%(latitude)f, %(longitude)f" % st.session_state.coords) if st.session_state.coords is not None else None
 st.text_input("Адрес дома", value=getattr(address_info, 'address', None), disabled=True)
+district = address_info and address_info.raw['address']['suburb']
+# coords = address_info and dict(latitude=address_info.latitude, longitude=address_info.longitude)
 # else:
 #     pos = ymap_component(pos)
 
-appartment_types = (
+apartment_types = (
     "Новостройка",
     "Вторичка",
 )
-pills("Тип жилья", appartment_types, key='appartment_type')
+pills("Тип жилья", apartment_types, key='apartment_type')
 
 building_types = (
     'Кирпичный',
@@ -252,13 +255,10 @@ decorating_types_old = (
     "Евро",
     "Дизайнерский",
 )
-pills(
-    LABELS['decorating'],
-    decorating_types_new if is_new() else decorating_types_old,
-    key='decorating',
-)
+decorating_types = decorating_types_new if is_new() else decorating_types_old
+pills(LABELS['decorating'], decorating_types, key='decorating')
 
-st.slider(
+st.number_input(
     "Общая площадь",
     min_value=1.0, max_value=500.0, step=0.5, value=50.0,
     format='%.1f',
@@ -277,63 +277,77 @@ st.number_input(
     key='kitch_sq'
 )
 
-if not st.session_state.get('is_filled', False):
+required_parameters = (
+    'build_year', 'num_room', 'height', 'floor', 'max_floor', 'full_sq', 'live_sq', 'kitch_sq',
+    'apartment_type', 'building_type', 'decorating',
+)
+if not all(map(lambda p: st.session_state.get(p) is not None, required_parameters)):
     st.info("Укажите необходимые параметры квартиры")
-    st.session_state.is_filled = st.button("Расчитать стоимость", type='primary', use_container_width=True)
-    if st.session_state.is_filled:
-        st.experimental_rerun()
+    st.session_state.pop('calculation_performed', None)
 else:
-    st.subheader("Результат оценки")
-    with st.spinner("Расчет стоимости..."):
-        data = {key: st.session_state[key] for key in (
-            'coords', 'district', 'build_year', 'num_room', 'height', 'floor', 'max_floor', 'apartment_type', 'building_type', 'decorating',
-            'full_sq', 'live_sq', 'kitch_sq'
-        )} | dict(district=address_info.raw['address']['suburb'])
-        r = requests.get(f"{os.getenv('MODEL_SERVER_URL')}/predict_price", params=dict(data, top_features=5))
-        predicted_price = r.json()
-        st_pyecharts(build_price_title_chart(total=predicted_price['total']), height=50)
-        st_pyecharts(build_price_components_impact_chart(total=predicted_price['total'], details=predicted_price['details']), height=400)
-        # total = 5400000
-        # details = {'build_year': 0.60, 'num_room': 0.30, 'floor': 0.10}
-        # st_pyecharts(build_price_title_chart(total=total), height=50)
-        # st_pyecharts(build_price_components_impact_chart(total=total, details=details), height=400)
-    # import time
-    # time.sleep(2)
-    st.subheader("Динамика цены квартиры с указанными параметрами")
-    with st.spinner("Построение тренда..."):
-        price_flow = [
-            dict(date=datetime(2023, 3, 3), price=5_200_000),
-            dict(date=datetime(2023, 3, 5), price=5_300_000),
-            dict(date=datetime(2023, 3, 7), price=5_400_000),
-            dict(date=datetime(2023, 3, 9), price=5_250_000),
-            dict(date=datetime(2023, 3, 11), price=5_450_000),
-            dict(date=datetime(2023, 3, 13), price=5_400_000),
-        ]
-        st_pyecharts(build_price_dynamic_chart(price_flow=price_flow))
-    # import time
-    # time.sleep(2)
-    st.subheader("Похожие предложения")
-    with st.spinner("Подбор альтернатив..."):
-        data = {key: st.session_state[key] for key in (
-            'coords', 'build_year', 'num_room', 'height', 'floor', 'max_floor', 'apartment_type', 'building_type', 'decorating',
-            'full_sq', 'live_sq', 'kitch_sq'
-        )}
-        r = requests.get(f"{os.getenv('MODEL_SERVER_URL')}/find_similar", params=dict(data, similar_items=4, top_features=5))
-        T = lambda impact, value: dict(impact=impact, originalValue=value)
-        price_details = {k: T(v, data[k]) for k, v in data.items()}
-        target_offer = dict(details=price_details, price=data, address="Адрес X")
-        similar_offers_details = [
-            {'details': {'build_year': T(0.40, 1960), 'num_room': T(0.50, 3), 'floor': T(0.10, 5)}, 'price': 6_000_000, 'address': "Адрес 1"},
-            {'details': {'build_year': T(0.55, 1993), 'num_room': T(0.40, 2), 'floor': T(0.05, 5)}, 'price': 4_850_000, 'address': "Адрес 2"},
-            {'details': {'build_year': T(0.60, 2012), 'num_room': T(0.38, 1), 'floor': T(0.02, 10)}, 'price': 5_200_000, 'address': "Адрес 3"},
-            {'details': {'build_year': T(0.58, 2009), 'num_room': T(0.37, 1), 'floor': T(0.05, 12)}, 'price': 5_250_000, 'address': "Адрес 4"},
-        ]
-        st_pyecharts(build_competitive_price_chart(
-            target_offer=target_offer,
-            similar_offers_details=similar_offers_details
-        ), height='500px')
-    # fig = None
-    # st.plotly_chart(fig, theme=None, use_container_width=True)
+    calculation_performed = st.session_state.get('calculation_performed')
+    st.session_state.calculation_performed = st.button("Расчитать стоимость", type='primary', use_container_width=True)
+    if calculation_performed:
+        st.subheader("Результат оценки")
+        with st.spinner("Расчет стоимости..."):
+            sale_info = dict((
+                    (key, st.session_state[key]) for key in (
+                        'build_year', 'num_room', 'height', 'floor', 'max_floor', 'full_sq', 'live_sq', 'kitch_sq'
+                    )
+                ),
+                district=district,
+                apartment_type=apartment_types[st.session_state.apartment_type],
+                building_type=building_types[st.session_state.building_type],
+                decorating=decorating_types[st.session_state.decorating]
+            )
+            data = dict(coords=st.session_state.coords, sale_info=sale_info)
+            r = requests.post(f"{os.getenv('MODEL_SERVER_BASE_URL')}/predict_price", params=dict(top_features=5), json=data)
+            st.info(r.json())
+            predicted_price = r.json()
+            st_pyecharts(build_price_title_chart(total=predicted_price['total']), height=50)
+            st_pyecharts(build_price_components_impact_chart(total=predicted_price['total'], details=predicted_price['details']), height=400)
+            # total = 5400000
+            # details = {'build_year': 0.60, 'num_room': 0.30, 'floor': 0.10}
+            # st_pyecharts(build_price_title_chart(total=total), height=50)
+            # st_pyecharts(build_price_components_impact_chart(total=total, details=details), height=400)
+        # import time
+        # time.sleep(2)
+        # st.subheader("Динамика цены квартиры с указанными параметрами")
+        # with st.spinner("Построение тренда..."):
+        #     price_flow = [
+        #         dict(date=datetime(2023, 3, 3), price=5_200_000),
+        #         dict(date=datetime(2023, 3, 5), price=5_300_000),
+        #         dict(date=datetime(2023, 3, 7), price=5_400_000),
+        #         dict(date=datetime(2023, 3, 9), price=5_250_000),
+        #         dict(date=datetime(2023, 3, 11), price=5_450_000),
+        #         dict(date=datetime(2023, 3, 13), price=5_400_000),
+        #     ]
+        #     st_pyecharts(build_price_dynamic_chart(price_flow=price_flow))
+        # import time
+        # time.sleep(2)
+        # st.subheader("Похожие предложения")
+        # with st.spinner("Подбор альтернатив..."):
+        #     sale_info = {key: st.session_state[key] for key in (
+        #         'build_year', 'num_room', 'height', 'floor', 'max_floor', 'apartment_type', 'building_type', 'decorating',
+        #         'full_sq', 'live_sq', 'kitch_sq'
+        #     )} | dict(district=district)
+        #     data = dict(coords=st.session_state.coords, sale_info=sale_info)
+        #     r = requests.post(f"{os.getenv('MODEL_SERVER_BASE_URL')}/find_similar", params=dict(similar_items=4, top_features=5), json=data)
+        #     T = lambda impact, value: dict(impact=impact, originalValue=value)
+        #     price_details = {k: T(v, data[k]) for k, v in data.items()}
+        #     target_offer = dict(details=price_details, price=data, address="Адрес X")
+        #     similar_offers_details = [
+        #         {'details': {'build_year': T(0.40, 1960), 'num_room': T(0.50, 3), 'floor': T(0.10, 5)}, 'price': 6_000_000, 'address': "Адрес 1"},
+        #         {'details': {'build_year': T(0.55, 1993), 'num_room': T(0.40, 2), 'floor': T(0.05, 5)}, 'price': 4_850_000, 'address': "Адрес 2"},
+        #         {'details': {'build_year': T(0.60, 2012), 'num_room': T(0.38, 1), 'floor': T(0.02, 10)}, 'price': 5_200_000, 'address': "Адрес 3"},
+        #         {'details': {'build_year': T(0.58, 2009), 'num_room': T(0.37, 1), 'floor': T(0.05, 12)}, 'price': 5_250_000, 'address': "Адрес 4"},
+        #     ]
+        #     st_pyecharts(build_competitive_price_chart(
+        #         target_offer=target_offer,
+        #         similar_offers_details=similar_offers_details
+        #     ), height='500px')
+        # fig = None
+        # st.plotly_chart(fig, theme=None, use_container_width=True)
 
 st.header("Задействованные технологии")
 st.markdown("""
