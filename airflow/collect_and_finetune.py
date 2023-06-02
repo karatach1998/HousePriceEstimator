@@ -70,7 +70,7 @@ selenium_node_deployment = (
             name="selenium-node"
         ),
         spec=k8s.V1DeploymentSpec(
-            replicas=2,
+            replicas=5,
             selector=k8s.V1LabelSelector(
                 match_labels=dict(app="selenium-node")
             ),
@@ -141,7 +141,7 @@ scrapper_worker_pod = lambda conn: (
                     name="celery",
                     image="ghcr.io/karatach1998/cian-scrapper:latest",
                     image_pull_policy="Always",
-                    command=["/bin/sh", "-c", "ls -l . ; poetry run celery -A cian_scrapper.main.celeryapp worker"],
+                    command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp worker"],
                     env=[
                         k8s.V1EnvVar(name="BROKER_URL", value=Template(r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
                         # k8s.V1EnvVar(name="CELERY_CUSTOM_WORKER_POOL", value="celery_aio_pool.pool:AsyncIOPool"),
