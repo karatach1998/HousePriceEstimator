@@ -162,7 +162,7 @@ async def _get_cian_sale_info(sale_url):
             geopy_location = geopy_nominatim.reverse((latitude, longitude))
         except:
             city, *_, street, building = await session.get_elements("//address/a", SelectorType.xpath)
-            geopy_location = geopy_nominatim.query(dict(street=f"{await building.get_text()},{await street.get_text()}", city=await city.get_text()))
+            geopy_location = geopy_nominatim.geocode(dict(street=f"{await building.get_text()},{await street.get_text()}", city=await city.get_text()))
             latitude, longitude = geopy_location.latitude, geopy_location.longitude
         # print(driver.find_element(By.XPATH, "//*[@data-name='UndergroundIcon']/ancestor::li").get_attribute('innerHTML'))
         # global DEBUG
