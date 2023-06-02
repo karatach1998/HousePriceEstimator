@@ -149,7 +149,7 @@ async def _get_cian_sale_info(sale_url):
         price_currency = CURRENCY_SYMBOL_TO_NAME.get(price_currency, price_currency)
 
         address = await get_element_attribute(session, "//div[@data-name='Geo']/span[@itemprop='name']", SelectorType.xpath, "content")
-        geopy_nominatim = geopy.geocoders.Nominatim(user_agent="HousePriceEstimatorTest")
+        geopy_nominatim = geopy.geocoders.Nominatim(user_agent=f"HousePriceEstimator#{sale_id}")
         try:
             try:
                 map_desc_href = await (await session.get_element("//section[@data-name='NewbuildingMapWrapper']//a[@target='_blank' or @target='_self']", SelectorType.xpath)).get_attribute('href')
@@ -159,11 +159,11 @@ async def _get_cian_sale_info(sale_url):
                 latitude, longitude = float(m["lat"]), float(m["lng"])
             else:
                 latitude, longitude = list(map(float, parse_qs(urlparse(map_desc_href).query)["center"][0].split(',')))
-            geopy_location = geopy_nominatim.reverse((latitude, longitude))
         except:
             city, *_, street, building = await session.get_elements("//address/a", SelectorType.xpath)
             geopy_location = geopy_nominatim.geocode(dict(street=f"{await building.get_text()},{await street.get_text()}", city=await city.get_text()))
             latitude, longitude = geopy_location.latitude, geopy_location.longitude
+        geopy_location = geopy_nominatim.reverse((latitude, longitude))
         # print(driver.find_element(By.XPATH, "//*[@data-name='UndergroundIcon']/ancestor::li").get_attribute('innerHTML'))
         # global DEBUG
         # DEBUG = True
