@@ -86,7 +86,7 @@ async def describe_area(longitude: float, latitude: float) -> dict:
     nearest_railroad, nearest_railroad_distance = await nearest_organization(OrganizationTypeEnum.railroad, lon=longitude, lat=latitude, return_org=True)
     nearest_railroad_id = nearest_railroad['platform_id']
     nearest_railroad_route_ids = nearest_railroad['route_id']
-    nearest_kindergarten_distance = nearest_organization(OrganizationTypeEnum.kindergarten, lon=longitude, lat=latitude)
+    nearest_kindergarten_distance = await nearest_organization(OrganizationTypeEnum.kindergarten, lon=longitude, lat=latitude)
     organizations_count_distances = (500, 1000, 1500, 2000, 3000, 5000)
     food_price_bounds = (500, 1000, 1500, 2500, 4000, math.inf)
     organizations_count_info = dict(chain.from_iterable([
