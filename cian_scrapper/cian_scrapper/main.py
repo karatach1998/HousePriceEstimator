@@ -160,7 +160,7 @@ async def _get_cian_sale_info(sale_url):
             else:
                 latitude, longitude = list(map(float, parse_qs(urlparse(map_desc_href).query)["center"][0].split(',')))
             geopy_location = geopy_nominatim.reverse((latitude, longitude))
-        except NoSuchElement:
+        except:
             city, *_, street, building = await session.get_elements("//address/a", SelectorType.xpath)
             geopy_location = geopy_nominatim.query(dict(street=f"{await building.get_text()},{await street.get_text()}", city=await city.get_text()))
             latitude, longitude = geopy_location.latitude, geopy_location.longitude
