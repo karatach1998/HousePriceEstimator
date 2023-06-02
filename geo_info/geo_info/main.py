@@ -99,8 +99,7 @@ async def describe_area(longitude: float, latitude: float) -> dict:
         )
         for distance in organizations_count_distances
     ]))
-    f = lambda x: print(x) or x
-    return f(distances_to_rings  | dict(
+    return distances_to_rings  | dict(
         nuclear_reactor_km=nearest_nuclear_distance,
         subway_line=nearest_subway_line,
         subway_name=nearest_subway_name,
@@ -109,4 +108,4 @@ async def describe_area(longitude: float, latitude: float) -> dict:
         railroad_routes=nearest_railroad_route_ids,
         railroad_km=nearest_railroad_distance,
         kindergarten_km=nearest_kindergarten_distance,
-    ) | organizations_count_info)
+    ) | organizations_count_info
