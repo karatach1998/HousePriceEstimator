@@ -212,7 +212,7 @@ async def _get_cian_sale_info(sale_url):
     return result
 
 
-@celeryapp.task
+@celeryapp.task(retry_kwargs=dict(max_retries=2, countdown=60))
 def get_cian_sale_info(sale_url):
     return asyncio.get_event_loop().run_until_complete(_get_cian_sale_info(sale_url))
 
