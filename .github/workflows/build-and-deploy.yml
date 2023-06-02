@@ -88,5 +88,7 @@ jobs:
               clickhousePassword: ${{ secrets.CLICKHOUSE_PASSWORD }}
               rabbitmqPassword: ${{ secrets.RABBITMQ_PASSWORD }}
               rabbitmqErlangCookie: ${{ secrets.RABBITMQ_ERLANG_COOKIE }}
+              awsAccessKeyId: ${{ secrets.YANDEXCLOUD_ACCESS_KEY_ID }}
+              awsSecretAccessKey: ${{ secrets.YANDEXCLOUD_SECRET_ACCESS_KEY }}
         env:
           KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'

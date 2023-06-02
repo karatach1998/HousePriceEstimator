@@ -2,6 +2,8 @@ secrets:
   clickhousePassword: ""
   rabbitmqPassword: ""
   rabbitmqErlangCookie: ""
+  awsAccessKeyId: ""
+  awsSecretAccessKey: ""
 
 clickhouse:
   auth:
@@ -47,6 +49,15 @@ airflow:
         host: scrapper-flower.scrapper.svc.cluster.local
         port: 5555
         schema: http
+      - id: http_geoinfo
+        type: http
+        host: geoinfo
+        port: 8060
+        schema: http
+      - id: s3
+        type: aws
+        login: ${AWS_ACCESS_KEY_ID}
+        password: ${AWS_SECRET_ACCESS_KEY}
     connectionsTemplates:
       RABBITMQ_PASSWORD:
         kind: secret
@@ -56,6 +67,14 @@ airflow:
         kind: secret
         name: credentials
         key: clickhouse-password
+      AWS_ACCESS_KEY_ID:
+        kind: secret
+        name: credentials
+        key: aws-access-key-id
+      AWS_SECRET_ACCESS_KEY:
+        kind: secret
+        name: credentials
+        key: aws-secret-access-key
     extraPipPackages:
       - "apache-airflow-providers-cncf-kubernetes"
       - "apache-airflow-providers-http"
