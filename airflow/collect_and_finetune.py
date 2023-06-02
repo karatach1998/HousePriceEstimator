@@ -148,7 +148,7 @@ scrapper_worker_pod = lambda conn: (
                         k8s.V1EnvVar(name="CELERY_DEFAULT_QUEUE", value="tasks"),
                         k8s.V1EnvVar(name="CELERY_IGNORE_RESULT", value="True"),
                         k8s.V1EnvVar(name="CLICKHOUSE_HOST", value=conn.clickhouse_default.host),
-                        k8s.V1EnvVar(name="CLICKHOUSE_USER", value=conn.clickhouse_default.login),
+                        k8s.V1EnvVar(name="CLICKHOUSE_USERNAME", value=conn.clickhouse_default.login),
                         k8s.V1EnvVar(name="CLICKHOUSE_PASSWORD", value=conn.clickhouse_default.password),
                         k8s.V1EnvVar(name="GEOINFO_BASE_URL", value="http://geoinfo.default.svc.cluster.local:8060"),
                         k8s.V1EnvVar(name="SELENIUM_REMOTE_URL", value="http://selenium:4444/wd/hub"),
@@ -285,13 +285,24 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 30), schedu
         ) for state in ('PENDING', 'RECEIVED', 'STARTED')
     ]
 
-    @task
-    def finetune_model():
-        return requests.get("model-server:8100/finetune").status_code == 200
+    finetune_model = KubernetesPodOperator(
+        task_id="finetune_model",
+        image="ghcr.io/karatach1998/model-server:latest",
+        image_pull_policy="Always",
+        cmds=["poetry", "run", "python", "model_server/finetune.py"],
+        name="model-finetuner",
+        startup_timeout_seconds=300,
+        is_delete_operator_pod=True,
+        env_vars={
+            "AWS_ACCESS_KEY_ID": r"{{ conn.s3.aws_access_key_id }}",
+            "AWS_SECRET_ACCESS_KEY": r"{{ conn.s3.aws_secret_access_key }}",
+            "GEOINFO_BASE_URL": r"{{ conn.http_geoinfo.schema }}://{{ conn.http_geoinfo.host }}:{{ conn.http_geoinfo.port }}",
+        },
+    )
 
     (
         create_selenium_hub() >> create_selenium_node() >> create_scrapper_worker()
         >> scrapper_producer >> all_tasks_processed
         >> delete_scrapper_worker() >> delete_selenium_node() >> delete_selenium_hub()
-        >> finetune_model()
+        >> finetune_model
     )
