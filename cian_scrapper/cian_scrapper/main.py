@@ -149,7 +149,7 @@ async def _get_cian_sale_info(sale_url):
         price_currency = CURRENCY_SYMBOL_TO_NAME.get(price_currency, price_currency)
 
         address = await get_element_attribute(session, "//div[@data-name='Geo']/span[@itemprop='name']", SelectorType.xpath, "content")
-        geopy_nominatim = geopy.geocoders.Nominatim(user_agent="HousePriceEstimator")
+        geopy_nominatim = geopy.geocoders.Nominatim(user_agent="HousePriceEstimatorTest")
         try:
             try:
                 map_desc_href = await (await session.get_element("//section[@data-name='NewbuildingMapWrapper']//a[@target='_blank' or @target='_self']", SelectorType.xpath)).get_attribute('href')
