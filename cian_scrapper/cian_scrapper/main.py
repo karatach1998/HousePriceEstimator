@@ -79,6 +79,7 @@ async def collect_cian_sale_links():
                 if search_summary := await (await session.get_element("//div[@data-name='SummaryHeader']/h5", SelectorType.xpath)).get_text():
                     total_sales = parse_int(search_summary.replace(' ', ''))
             elements = await session.get_elements("//article[@data-name='CardComponent']//div[@data-name='LinkArea']/a", SelectorType.xpath)
+            print(f"PAGE#{page_index} has {len(elements)} sales")
             for el in elements:
                 print(await el.get_attribute('href'))
                 process_sale.delay(await el.get_attribute('href'))
@@ -89,7 +90,7 @@ async def collect_cian_sale_links():
 def publish_result(result, table_name):
     client = ClickHouseClient(
         host=os.getenv('CLICKHOUSE_HOST', "clickhouse"), 
-        user=os.getenv('CLICKHOUSE_USER', "default"), 
+        user=os.getenv('CLICKHOUSE_USERNAME', "default"), 
         password=os.getenv('CLICKHOUSE_PASSWORD', "password"), 
     )
     result['coords'] = tuple(result['coords'][key] for key in ('latitude', 'longitude'))
