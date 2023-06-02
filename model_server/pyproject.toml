@@ -8,6 +8,12 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 fastapi = {extras = ["all"], version = "^0.94.0"}
+pandas = "^2.0.2"
+httpx = "^0.24.1"
+boto3 = "^1.26.145"
+cachetools = "^5.3.1"
+clickhouse-connect = "^0.5.25"
+numpy = "^1.24.3"
 
 
 [build-system]

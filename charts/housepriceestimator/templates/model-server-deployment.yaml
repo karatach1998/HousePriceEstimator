@@ -19,7 +19,7 @@ spec:
           command: ["poetry", "run", "uvicorn", "model_server.main:app", "--host=0.0.0.0", "--port=8100"]
           env:
             - name: CLICKHOUSE_HOST
-              value: {{ include "common.names.fullname" . | quote }}
+              value: {{ .Values.clickhouse.common.name.fullname | quote }}
             - name: CLICKHOUSE_USERNAME
               value: {{ .Values.clickhouse.auth.username | quote }}
             - name: CLICKHOUSE_PASSWORD
@@ -27,6 +27,18 @@ spec:
                 secretKeyRef:
                   key: clickhouse-password
                   name: credentials
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: aws-acesss-key-id
+                  name: credentials
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: aws-secret-access-key
+                  name: credentials
+            - name: GEOINFO_BASE_URL
+              value: "http://(GEOINFO_SERVICE_HOST):(GEOINFO_SERVICE_PORT)"
           ports:
             - containerPort: 8100
               protocol: TCP
