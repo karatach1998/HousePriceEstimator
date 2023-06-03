@@ -297,6 +297,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 30), schedu
             "AWS_ACCESS_KEY_ID": r"{{ conn.s3.login }}",
             "AWS_SECRET_ACCESS_KEY": r"{{ conn.s3.password }}",
             "GEOINFO_BASE_URL": r"{{ conn.http_geoinfo.schema }}://{{ conn.http_geoinfo.host }}:{{ conn.http_geoinfo.port }}",
+            "PYTHONPATH": "/app"
         },
     )
 
