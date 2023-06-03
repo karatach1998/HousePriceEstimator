@@ -38,7 +38,7 @@ spec:
                   key: aws-secret-access-key
                   name: credentials
             - name: GEOINFO_BASE_URL
-              value: "http://(GEOINFO_SERVICE_HOST):(GEOINFO_SERVICE_PORT)"
+              value: "http://$(GEOINFO_SERVICE_HOST):$(GEOINFO_SERVICE_PORT)"
           ports:
             - containerPort: 8100
               protocol: TCP
