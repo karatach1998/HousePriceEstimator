@@ -1,3 +1,6 @@
+import sys
+print(sys.path)
+
 from model_server.common import MODEL_REGISTRY, DummyModel
 
 
