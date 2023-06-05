@@ -153,13 +153,11 @@ scrapper_worker_pod = lambda conn: (
                         k8s.V1EnvVar(name="GEOINFO_BASE_URL", value="http://geoinfo.default.svc.cluster.local:8060"),
                         k8s.V1EnvVar(name="SELENIUM_REMOTE_URL", value="http://selenium:4444/wd/hub"),
                     ],
-                    liveness_probe=[
-                        k8s.V1Probe(
-                            _exec=k8s.V1ExecAction(command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp status"]),
-                            initial_delay_seconds=60,
-                            period_seconds=5,
-                        )
-                    ]
+                    liveness_probe=k8s.V1Probe(
+                        _exec=k8s.V1ExecAction(command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp status"]),
+                        initial_delay_seconds=60,
+                        period_seconds=5,
+                    )
                 )
             ],
         )
@@ -183,7 +181,7 @@ scrapper_flower_pod = lambda conn: (
                         k8s.V1ContainerPort(container_port=5555),
                     ],
                     env=[
-                        k8s.V1EnvVar(name="BROKER_URL", value=Template(r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
+                        k8s.V1EnvVar(name="BROKER_URL", value=Template(r"amqp://{ conn.rabbitmq_default.login }:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
                         k8s.V1EnvVar(name="CLELERY_DEFAULT_QUEUE", value="tasks"),
                     ]
                 )
