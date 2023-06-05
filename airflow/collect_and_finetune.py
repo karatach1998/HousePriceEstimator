@@ -156,7 +156,8 @@ scrapper_worker_pod = lambda conn: (
                     liveness_probe=k8s.V1Probe(
                         _exec=k8s.V1ExecAction(command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp status"]),
                         initial_delay_seconds=60,
-                        period_seconds=5,
+                        period_seconds=30,
+                        timeout_seconds=10,
                     )
                 )
             ],
