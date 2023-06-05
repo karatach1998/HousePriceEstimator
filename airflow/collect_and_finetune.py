@@ -152,6 +152,13 @@ scrapper_worker_pod = lambda conn: (
                         k8s.V1EnvVar(name="CLICKHOUSE_PASSWORD", value=conn.clickhouse_default.password),
                         k8s.V1EnvVar(name="GEOINFO_BASE_URL", value="http://geoinfo.default.svc.cluster.local:8060"),
                         k8s.V1EnvVar(name="SELENIUM_REMOTE_URL", value="http://selenium:4444/wd/hub"),
+                    ],
+                    liveness_probe=[
+                        k8s.V1Probe(
+                            _exec=k8s.V1ExecAction(command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp status"]),
+                            initial_delay_seconds=60,
+                            period_seconds=5,
+                        )
                     ]
                 )
             ],
