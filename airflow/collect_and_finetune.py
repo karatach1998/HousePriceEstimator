@@ -131,36 +131,47 @@ selenium_node_hpa = (
 )
 
 scrapper_worker_pod = lambda conn: (
-    k8s.V1Pod(
+    k8s.V1Deployment(
         metadata=k8s.V1ObjectMeta(
-            name="scrapper-worker",
+            name="scrapper-worker"
         ),
-        spec=k8s.V1PodSpec(
-            containers=[
-                k8s.V1Container(
-                    name="celery",
-                    image="ghcr.io/karatach1998/cian-scrapper:latest",
-                    image_pull_policy="Always",
-                    command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp worker"],
-                    env=[
-                        k8s.V1EnvVar(name="BROKER_URL", value=Template(r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
-                        # k8s.V1EnvVar(name="CELERY_CUSTOM_WORKER_POOL", value="celery_aio_pool.pool:AsyncIOPool"),
-                        k8s.V1EnvVar(name="CELERY_DEFAULT_QUEUE", value="tasks"),
-                        k8s.V1EnvVar(name="CELERY_IGNORE_RESULT", value="True"),
-                        k8s.V1EnvVar(name="CLICKHOUSE_HOST", value=conn.clickhouse_default.host),
-                        k8s.V1EnvVar(name="CLICKHOUSE_USERNAME", value=conn.clickhouse_default.login),
-                        k8s.V1EnvVar(name="CLICKHOUSE_PASSWORD", value=conn.clickhouse_default.password),
-                        k8s.V1EnvVar(name="GEOINFO_BASE_URL", value="http://geoinfo.default.svc.cluster.local:8060"),
-                        k8s.V1EnvVar(name="SELENIUM_REMOTE_URL", value="http://selenium:4444/wd/hub"),
+        spec=k8s.V1DeploymentSpec(
+            replicas=2,
+            selector=k8s.V1LabelSelector(
+                match_labels=dict(app="scrapper-worker")
+            ),
+            template=k8s.V1PodTemplateSpec(
+                metadata=k8s.V1ObjectMeta(
+                    labels=dict(app="scrapper-worker"),
+                ),
+                spec=k8s.V1PodSpec(
+                    containers=[
+                        k8s.V1Container(
+                            name="celery",
+                            image="ghcr.io/karatach1998/cian-scrapper:latest",
+                            image_pull_policy="Always",
+                            command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp worker"],
+                            env=[
+                                k8s.V1EnvVar(name="BROKER_URL", value=Template(r"amqp://{{ conn.rabbitmq_default.login }}:{{ conn.rabbitmq_default.password }}@{{ conn.rabbitmq_default.host }}:{{ conn.rabbitmq_default.port }}/").render(conn=conn)),
+                                # k8s.V1EnvVar(name="CELERY_CUSTOM_WORKER_POOL", value="celery_aio_pool.pool:AsyncIOPool"),
+                                k8s.V1EnvVar(name="CELERY_DEFAULT_QUEUE", value="tasks"),
+                                k8s.V1EnvVar(name="CELERY_IGNORE_RESULT", value="True"),
+                                k8s.V1EnvVar(name="CLICKHOUSE_HOST", value=conn.clickhouse_default.host),
+                                k8s.V1EnvVar(name="CLICKHOUSE_USERNAME", value=conn.clickhouse_default.login),
+                                k8s.V1EnvVar(name="CLICKHOUSE_PASSWORD", value=conn.clickhouse_default.password),
+                                k8s.V1EnvVar(name="GEOINFO_BASE_URL", value="http://geoinfo.default.svc.cluster.local:8060"),
+                                k8s.V1EnvVar(name="SELENIUM_REMOTE_URL", value="http://selenium:4444/wd/hub"),
+                            ],
+                            liveness_probe=k8s.V1Probe(
+                                _exec=k8s.V1ExecAction(command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp status"]),
+                                initial_delay_seconds=60,
+                                period_seconds=30,
+                                timeout_seconds=10,
+                            )
+                        )
                     ],
-                    liveness_probe=k8s.V1Probe(
-                        _exec=k8s.V1ExecAction(command=["/bin/sh", "-c", "poetry run celery -A cian_scrapper.main.celeryapp status"]),
-                        initial_delay_seconds=60,
-                        period_seconds=30,
-                        timeout_seconds=10,
-                    )
                 )
-            ],
+            )
         )
     )
 )
@@ -238,8 +249,8 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 30), schedu
     @task
     def create_scrapper_worker(**kwargs):
         config.load_incluster_config()
+        client.AppsV1Api().create_namespaced_deployment(body=scrapper_worker_pod(kwargs.get('conn')), namespace=kube_namespace)
         core_api = client.CoreV1Api()
-        core_api.create_namespaced_pod(body=scrapper_worker_pod(kwargs.get('conn')), namespace=kube_namespace)
         core_api.create_namespaced_pod(body=scrapper_flower_pod(kwargs.get('conn')), namespace=kube_namespace)
         core_api.create_namespaced_service(body=scrapper_flower_svc, namespace=kube_namespace)
 
@@ -263,7 +274,7 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 30), schedu
         core_api = client.CoreV1Api()
         core_api.delete_namespaced_service(name="scrapper-flower", namespace=kube_namespace)
         core_api.delete_namespaced_pod(name="scrapper-flower", namespace=kube_namespace)
-        core_api.delete_namespaced_pod(name="scrapper-worker", namespace=kube_namespace)
+        client.AppsV1Api().delete_namespaced_deployment(name="scrapper-worker", namespace=kube_namespace)
 
     scrapper_producer = KubernetesPodOperator(
         task_id="scrape_sales_list",
