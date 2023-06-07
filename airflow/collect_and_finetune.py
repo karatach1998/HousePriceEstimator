@@ -313,6 +313,9 @@ with DAG(dag_id="collect_and_finetune", start_date=datetime(2023, 5, 30), schedu
         env_vars={
             "AWS_ACCESS_KEY_ID": r"{{ conn.s3.login }}",
             "AWS_SECRET_ACCESS_KEY": r"{{ conn.s3.password }}",
+            "CLICKHOUSE_HOST": r"{{ conn.clickhouse_default.host }}",
+            "CLICKHOUSE_USERNAME": r"{{ conn.clickhouse_default.login }}",
+            "CLICKHOUSE_PASSWORD": r"{{ conn.clickhouse_default.password }}",
             "GEOINFO_BASE_URL": r"{{ conn.http_geoinfo.schema }}://{{ conn.http_geoinfo.host }}:{{ conn.http_geoinfo.port }}",
             "PYTHONPATH": "/app"
         },
