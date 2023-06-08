@@ -5,3 +5,120 @@ services:
     build: ./web
     ports:
       - "8501:8501"
+    environment:
+      MODEL_SERVER_BASE_URL: http://model-server:8100
+    profiles:
+      - predictor
+
+  model_server:
+    hostname: model-server
+    image: model_server
+    build: ./model_server
+    environment:
+      AWS_ACCESS_KEY_ID: ''
+      AWS_SECRET_ACCESS_KEY: ''
+      CLICKHOUSE_HOST: host.docker.internal
+      CLICKHOUSE_USERNAME: 'default'
+      CLICKHOUSE_PASSWORD: ''
+      GEOINFO_BASE_URL: 'http://geoinfo:8060'
+    ports:
+      - 8100:8100
+    profiles:
+      - predictor
+
+  geoinfo_redis:
+    hostname: geoinfo-redis
+    image: redis
+    ports:
+      - 6379:6379
+    profiles:
+      - predictor
+      - scrapper
+      - geoinfo
+
+  geoinfo:
+    image: geoinfo
+    build: ./geo_info
+    ports:
+      - 8060:8060
+    depends_on:
+      - geoinfo_redis
+    profiles:
+      - predictor
+      - scrapper
+      - geoinfo
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: 'user'
+      RABBITMQ_DEFAULT_PASS: 'password'
+    ports:
+      - 15672:15672
+    profiles:
+      - predictor
+      - scrapper
+
+  scrapper:
+    image: cian-scrapper
+    build: ./cian_scrapper
+    command: poetry run python cian_scrapper/main.py
+    environment:
+      BROKER_URL: 'amqp://user:password@rabbitmq:5672/'
+      SCRAPPER_RESULTS_QUEUE: "sales_info"
+      SELENIUM_REMOTE_URL: "http://selenium:4444/wd/hub"
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      selenium:
+        condition: service_healthy
+    profiles:
+      - scrapper
+
+  scrapper_worker:
+    image: cian-scrapper
+    build: ./cian_scrapper
+    command: poetry run celery -A cian_scrapper.main.celeryapp worker #--pool=custom
+    environment:
+      BROKER_URL: 'amqp://user:password@rabbitmq:5672/'
+      CELERY_CUSTOM_WORKER_POOL: 'celery_aio_pool.pool:AsyncIOPool'
+      CELERY_IGNORE_RESULT: 'True'
+      GEOINFO_BASE_URL: 'http://geoinfo:8060'
+      SELENIUM_REMOTE_URL: "http://selenium:4444/wd/hub"
+    depends_on:
+      - rabbitmq
+      - selenium
+    profiles:
+      - scrapper
+
+  scrapper_flower:
+    image: cian-scrapper
+    build: ./cian_scrapper
+    command: poetry run celery -A cian_scrapper.main.celeryapp flower --port=5555 #--pool=custom
+    environment:
+      BROKER_URL: 'amqp://user:password@rabbitmq:5672/'
+    ports:
+      - "5555:5555"
+    depends_on:
+      - scrapper_worker
+    profiles:
+      - scrapper
+
+  selenium:
+    image: selenium/standalone-firefox:4.8
+    environment:
+      JAVA_OPTS: '-Dwebdriver.chrome.whitelistedIps='
+      SE_NODE_MAX_SESSIONS: '20'
+      SE_NODE_OVERRIDE_MAX_SESSIONS: 'true'
+      SE_OPTS: '--log-level SEVERE'
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/bin/check-grid.sh --host 0.0.0.0 --port 4444"]
+      interval: 10s
+      timeout: 1m
+      retries: 5
+      start_period: 5s
+    shm_size: '3g'
+    ports:
+      - 4444:4444
+    profiles:
+      - scrapper
