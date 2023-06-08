@@ -1,5 +1,6 @@
 import bisect
 import os
+import re
 from datetime import datetime
 from operator import itemgetter
 
@@ -20,7 +21,7 @@ st.set_page_config(
     page_icon="./static/favicon.ico",
 )
 
-is_new = lambda: 'appartment_type' not in st.session_state or st.session_state.appartment_type != 0
+is_new = lambda: 'apartment_type' not in st.session_state or st.session_state.apartment_type == 0
 
 LABELS = {
     'appartment_type': "Тип жилья",
@@ -31,7 +32,7 @@ LABELS = {
     'num_room': "Количество комнат",
     'height': "Высота потолков",
     'decorating': "Тип отделки" if is_new() else "Тип ремонта",
-    # 'appartment_type': "Тип жилья",
+    'full_sq': "Общая площадь",
     # 'appartment_type': "Тип жилья",
     # 'appartment_type': "Тип жилья",
 }
@@ -127,34 +128,34 @@ def build_price_dynamic_chart(*, price_flow):
     return line
 
 
-def build_competitive_price_chart(target_offer, similar_offers_details):
-    offers_details = sorted(similar_offers_details, key=itemgetter('price'))
-    target_offer_index = bisect.bisect(offers_details, target_offer['price'], key=itemgetter('price'))
-    offers_details.insert(target_offer_index, target_offer)
+def build_competitive_price_chart(target_sale_desc, similar_sales_desc):
+    offers_details = sorted(similar_sales_desc, key=itemgetter('price'))
+    target_sale_desc_index = bisect.bisect(offers_details, target_sale_desc['price'], key=itemgetter('price'))
+    offers_details.insert(target_sale_desc_index, target_sale_desc)
 
     bar = Bar(dict(pos_right='50%'))
-    bar.add_xaxis([dict(value=offer['address'], axisLabel={'fontWeight': 'bold' if index == target_offer_index else 'normal'})#, axisPointer=dict(type='shadow', shadowStyle=dict(color='rgba(1,0,0,0.1)')) if index == target_offer_index else dict())
+    bar.add_xaxis([dict(value=str(index), axisLabel={'fontWeight': 'bold' if index == target_sale_desc_index else 'normal'})#, axisPointer=dict(type='shadow', shadowStyle=dict(color='rgba(1,0,0,0.1)')) if index == target_sale_desc_index else dict())
                    for index, offer in enumerate(offers_details)])
-    for key in target_offer['details'].keys():
+    for key in target_sale_desc['details'].keys():
         bar.add_yaxis(
             LABELS[key],
-            y_axis=[dict(offer['details'][key], value=offer['price']*offer['details'][key]['impact'])
+            y_axis=[dict(offer['details'][key], value=int(offer['price']*offer['details'][key]['impact']))
                     for index, offer in enumerate(offers_details)],
             stack='components',
             category_gap='50%',
-            label_opts=opts.LabelOpts(position='inside', font_size=12, font_family="Microsoft YaHei",
+            label_opts=opts.LabelOpts(is_show=False, position='inside', font_size=12, font_family="Microsoft YaHei",
                                       formatter=JsCode(r'''function(x){return `${x.data.originalValue}`;}''')),
         )
     # bar_price = Bar()
-    # bar_price.add_xaxis([dict(value=offer['address'], label={'fontWeight': 'bolder' if index == target_offer_index else 'normal'}) for index, offer in enumerate(offers_details)])
+    # bar_price.add_xaxis([dict(value=offer['address'], label={'fontWeight': 'bolder' if index == target_sale_desc_index else 'normal'}) for index, offer in enumerate(offers_details)])
     bar.add_yaxis(
         "Стоимость",
-        y_axis=[dict(value=0, price=offer['price'], label={'fontWeight': 'bolder' if index == target_offer_index else 'normal'})
+        y_axis=[dict(value=0, price=offer['price'], label={'fontWeight': 'bold' if index == target_sale_desc_index else 'normal'})
                 for index, offer in enumerate(offers_details)],
         stack='components',
         is_selected=True,
         # background_style=dict(opacity=0),
-        label_opts=opts.LabelOpts(position='right', distance=10, font_size=16, font_weight='bolder', font_family='Microsoft YaHei',
+        label_opts=opts.LabelOpts(position='right', distance=10, font_size=18, font_weight='bolder', font_family='Microsoft YaHei',
                                   formatter=JsCode(r'''function(x){return `${x.data.price}`;}''')),
         # emphasis=dict(label=dict(fontWeight='bold'))
     )
@@ -189,12 +190,14 @@ def build_competitive_price_chart(target_offer, similar_offers_details):
 st.title("Калькулятор стоимости жилья")
 # pos = None
 # if pos is None:
-ymap_component("Выбирите расположение дома", key='coords')
-if st.session_state.coords is not None:
-    st.info("%(latitude)f, %(longitude)f" % dict(st.session_state.coords))
+ymap_component("Выбирите расположение дома", initial=dict(latitude=55.769359, longitude=37.588234), key='coords')
+# if st.session_state.coords is not None:
+#     st.info("%(latitude)f, %(longitude)f" % dict(st.session_state.coords))
 address_info = geopy.geocoders.Nominatim(user_agent="HousePriceEstimator").reverse("%(latitude)f, %(longitude)f" % st.session_state.coords) if st.session_state.coords is not None else None
 st.text_input("Адрес дома", value=getattr(address_info, 'address', None), disabled=True)
 district = address_info and address_info.raw['address']['suburb']
+if district != "Пресненский район":
+    st.error("На данный момент возможна оценка недвижимости только в Пресненском районе Москвы")
 # coords = address_info and dict(latitude=address_info.latitude, longitude=address_info.longitude)
 # else:
 #     pos = ymap_component(pos)
@@ -206,9 +209,8 @@ apartment_types = (
 pills("Тип жилья", apartment_types, key='apartment_type')
 
 building_types = (
-    'Кирпичный',
-    'Монолитный',
-    'Блочный',
+    "Монолитный",
+    "Монолитно-кирпичный"
 )
 pills("Тип дома", building_types, key='building_type')
 
@@ -247,12 +249,12 @@ st.number_input(
 
 decorating_types_new = (
     "Без отделки",
-    "Черновая",
+    "Чистовая",
+    "Предчистовая",
+    "Под ключ",
 )
 decorating_types_old = (
-    "Квартира без ремонта",
-    "Косметический",
-    "Евро",
+    "Без отделки",
     "Дизайнерский",
 )
 decorating_types = decorating_types_new if is_new() else decorating_types_old
@@ -264,37 +266,27 @@ st.number_input(
     format='%.1f',
     key='full_sq'
 )
-st.number_input(
-    "Площадь жилых помещений",
-    min_value=1.0, max_value=500.0, step=0.5, value=20.0,
-    format='%.1f',
-    key='live_sq'
-)
-st.number_input(
-    "Площадь кухни",
-    min_value=1.0, max_value=500.0, step=0.5, value=15.0,
-    format='%.1f',
-    key='kitch_sq'
-)
 
 required_parameters = (
-    'build_year', 'num_room', 'height', 'floor', 'max_floor', 'full_sq', 'live_sq', 'kitch_sq',
+    'build_year', 'num_room', 'height', 'floor', 'max_floor', 'full_sq',
     'apartment_type', 'building_type', 'decorating',
 )
-if not all(map(lambda p: st.session_state.get(p) is not None, required_parameters)):
+if not all(map(lambda p: p in st.session_state and st.session_state[p] is not None, required_parameters)):
     st.info("Укажите необходимые параметры квартиры")
     st.session_state.pop('calculation_performed', None)
 else:
     calculation_performed = st.session_state.get('calculation_performed')
     st.session_state.calculation_performed = st.button("Расчитать стоимость", type='primary', use_container_width=True)
-    if calculation_performed:
+    if st.session_state.calculation_performed:
         st.subheader("Результат оценки")
         with st.spinner("Расчет стоимости..."):
-            sale_info = dict((
+            sale_info = dict(
+                (
                     (key, st.session_state[key]) for key in (
-                        'build_year', 'num_room', 'height', 'floor', 'max_floor', 'full_sq', 'live_sq', 'kitch_sq'
+                        'build_year', 'height', 'floor', 'max_floor', 'full_sq',
                     )
                 ),
+                num_room=(int(st.session_state.num_room) if re.match(r"\d+", st.session_state.num_room) else 0) if st.session_state.num_room is not None else None,
                 district=district,
                 apartment_type=apartment_types[st.session_state.apartment_type],
                 building_type=building_types[st.session_state.building_type],
@@ -302,7 +294,6 @@ else:
             )
             data = dict(coords=st.session_state.coords, sale_info=sale_info)
             r = requests.post(f"{os.getenv('MODEL_SERVER_BASE_URL')}/predict_price", params=dict(top_features=5), json=data)
-            st.info(r.json())
             predicted_price = r.json()
             st_pyecharts(build_price_title_chart(total=predicted_price['total']), height=50)
             st_pyecharts(build_price_components_impact_chart(total=predicted_price['total'], details=predicted_price['details']), height=400)
@@ -325,35 +316,57 @@ else:
         #     st_pyecharts(build_price_dynamic_chart(price_flow=price_flow))
         # import time
         # time.sleep(2)
-        # st.subheader("Похожие предложения")
-        # with st.spinner("Подбор альтернатив..."):
-        #     sale_info = {key: st.session_state[key] for key in (
-        #         'build_year', 'num_room', 'height', 'floor', 'max_floor', 'apartment_type', 'building_type', 'decorating',
-        #         'full_sq', 'live_sq', 'kitch_sq'
-        #     )} | dict(district=district)
-        #     data = dict(coords=st.session_state.coords, sale_info=sale_info)
-        #     r = requests.post(f"{os.getenv('MODEL_SERVER_BASE_URL')}/find_similar", params=dict(similar_items=4, top_features=5), json=data)
-        #     T = lambda impact, value: dict(impact=impact, originalValue=value)
-        #     price_details = {k: T(v, data[k]) for k, v in data.items()}
-        #     target_offer = dict(details=price_details, price=data, address="Адрес X")
-        #     similar_offers_details = [
-        #         {'details': {'build_year': T(0.40, 1960), 'num_room': T(0.50, 3), 'floor': T(0.10, 5)}, 'price': 6_000_000, 'address': "Адрес 1"},
-        #         {'details': {'build_year': T(0.55, 1993), 'num_room': T(0.40, 2), 'floor': T(0.05, 5)}, 'price': 4_850_000, 'address': "Адрес 2"},
-        #         {'details': {'build_year': T(0.60, 2012), 'num_room': T(0.38, 1), 'floor': T(0.02, 10)}, 'price': 5_200_000, 'address': "Адрес 3"},
-        #         {'details': {'build_year': T(0.58, 2009), 'num_room': T(0.37, 1), 'floor': T(0.05, 12)}, 'price': 5_250_000, 'address': "Адрес 4"},
-        #     ]
-        #     st_pyecharts(build_competitive_price_chart(
-        #         target_offer=target_offer,
-        #         similar_offers_details=similar_offers_details
-        #     ), height='500px')
+        st.subheader("Похожие предложения")
+        with st.spinner("Подбор альтернатив..."):
+            sale_info = dict(
+                (
+                    (key, st.session_state[key]) for key in (
+                        'build_year', 'height', 'floor', 'max_floor', 'full_sq',
+                    )
+                ),
+                num_room=(int(st.session_state.num_room) if re.match(r"\d+", st.session_state.num_room) else 0) if st.session_state.num_room is not None else None,
+                district=district,
+                apartment_type=apartment_types[st.session_state.apartment_type],
+                building_type=building_types[st.session_state.building_type],
+                decorating=decorating_types[st.session_state.decorating]
+            )
+            data = dict(coords=st.session_state.coords, sale_info=sale_info)
+            r = requests.post(f"{os.getenv('MODEL_SERVER_BASE_URL')}/find_similar", params=dict(top_similar_items=4, top_features=5), json=data)
+            sales_desc = r.json()
+            # T = lambda impact, value: dict(impact=impact, originalValue=value)
+            # price_details = {k: T(v, data[k]) for k, v in data.items()}
+            # target_offer = dict(details=price_details, price=data, address="Адрес X")
+            # similar_offers_details = [
+            #     {'details': {'build_year': T(0.40, 1960), 'num_room': T(0.50, 3), 'floor': T(0.10, 5)}, 'price': 6_000_000, 'address': "Адрес 1"},
+            #     {'details': {'build_year': T(0.55, 1993), 'num_room': T(0.40, 2), 'floor': T(0.05, 5)}, 'price': 4_850_000, 'address': "Адрес 2"},
+            #     {'details': {'build_year': T(0.60, 2012), 'num_room': T(0.38, 1), 'floor': T(0.02, 10)}, 'price': 5_200_000, 'address': "Адрес 3"},
+            #     {'details': {'build_year': T(0.58, 2009), 'num_room': T(0.37, 1), 'floor': T(0.05, 12)}, 'price': 5_250_000, 'address': "Адрес 4"},
+            # ]
+            st_pyecharts(build_competitive_price_chart(
+                target_sale_desc=sales_desc['target'],
+                similar_sales_desc=sales_desc['similar']
+            ), height='500px')
         # fig = None
         # st.plotly_chart(fig, theme=None, use_container_width=True)
 
 st.header("Задействованные технологии")
 st.markdown("""
-<div style="width: 740; display: flex; align-items: center; justify-content: center; gap: 50px">
+<div style="width: 740; display: inline-flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: center; gap: 50px">
     <img src="https://s4-recruiting.cdn.greenhouse.io/external_greenhouse_job_boards/logos/400/515/800/original/logo-clickhouse.png?1634065357" height="100px">
     <img src="https://upload.wikimedia.org/wikipedia/commons/d/de/AirflowLogo.png" height="100px">
     <img src="https://d1.awsstatic.com/PAC/kuberneteslogo.eabc6359f48c8e30b7a138c18177f3fd39338e05.png" height="100px">
+    <img src="https://i.pinimg.com/originals/27/42/47/274247632a09f3a7750c2c6f43de403a.png" height="100px">
+    <img src="https://upload.wikimedia.org/wikipedia/en/thumb/6/6b/Redis_Logo.svg/1200px-Redis_Logo.svg.png" height="100px">
+    <img src="https://boostlog.io/articles/5abb7c910814730093a2eeb5/images-1522236577198.jpg" height="100px">
+    <img src="https://i2.wp.com/blog.knoldus.com/wp-content/uploads/2020/09/selenium_logo_large.png?fit=2932%2C718&amp;ssl=1" height="100px">
+</div>
+""", unsafe_allow_html=True)
+
+st.header("Репозиторий проекта")
+st.markdown("""
+<div style="width: 600; display: flex; align-items: center; justify-content: center">
+    <a href="https://github.com/karatach1998/HousePriceEstimator">
+        <img src="https://gitlab.com/uploads/-/system/group/avatar/10532272/github.png" alt="github.com/karatach1998/HousePriceEstimator" style="width: 70px">
+    </a>
 </div>
 """, unsafe_allow_html=True)

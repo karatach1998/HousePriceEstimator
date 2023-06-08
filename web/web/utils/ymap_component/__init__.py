@@ -15,5 +15,5 @@ else:
     _component_func = components.declare_component("ymap_components", path=build_dir)
 
 
-def ymap_component(label=None, pos=None, key=None):
-    return _component_func(label=label, pos=pos, key=key)
+def ymap_component(label=None, pos=None, initial=None, key=None):
+    return _component_func(label=label, pos=pos, initial=initial, key=key)

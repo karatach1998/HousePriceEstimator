@@ -4,11 +4,12 @@ import { YMaps, Map, Placemark, ZoomControl, GeolocationControl } from '@pbe/rea
 import { Streamlit } from 'streamlit-component-lib';
 // import { useRenderData } from 'streamlit-component-lib-react-hooks';
 
-const DEFAULT_POS = {latitude: 55.75, longitude: 37.5};
+// const DEFAULT_POS = {latitude: 55.75, longitude: 37.5};
+const DEFAULT_POS = {latitude:55.769359, longitude:37.588234};
 
 const YMapApp = () => {
   const [renderData, setRenderData] = useState();
-  const {label, pos: initialPos} = renderData?.args ?? {};
+  const {label, initial: initialPos} = renderData?.args ?? {};
   const [pos, setPos] = useState(initialPos ?? DEFAULT_POS);
 
   const mapState = { center: _.values(pos), zoom: 9 };

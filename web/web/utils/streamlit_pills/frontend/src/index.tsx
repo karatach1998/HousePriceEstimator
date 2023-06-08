@@ -33,43 +33,43 @@ function onRender(event: Event): void {
 
   while (container.firstChild)
     container.removeChild(container.lastChild as Node);
-  options.forEach((option: string, i: number) => {
-    let pill = container.appendChild(document.createElement("div"))
-    pill.classList.add("pill")
+    options.forEach((option: string, i: number) => {
+      let pill = container.appendChild(document.createElement("div"))
+      pill.classList.add("pill")
 
-    if (icons) {
-      let icon_span = pill.appendChild(document.createElement("span"))
-      icon_span.classList.add("icon")
-      icon_span.textContent = icons[i]
-    }
+      if (icons) {
+        let icon_span = pill.appendChild(document.createElement("span"))
+        icon_span.classList.add("icon")
+        icon_span.textContent = icons[i]
+      }
 
-    pill.appendChild(document.createTextNode(option))
+      pill.appendChild(document.createTextNode(option))
 
-    if (i === index) {
-      pill.classList.add("selected")
-    }
-
-    pill.onclick = function () {
-      // If the element is clearable, let the user unselect by clicking on the pill
-      // again. I.e. if this pill (which is clicked) was already selected before, we
-      // unselect it later.
-      let unselect = clearable && pill.classList.contains("selected")
-
-      container.querySelectorAll(".selected").forEach((el) => {
-        el.classList.remove("selected")
-      })
-
-      if (unselect) {
-        // Need to pass a string here and convert it to None on the Python side.
-        // If setting null, the components lib returns the "default" value (=index).
-        Streamlit.setComponentValue("None")
-      } else {
-        container.setAttribute('data-index', `${i}`);
-        Streamlit.setComponentValue(i)
+      if (i === index) {
         pill.classList.add("selected")
       }
-    }
-  })
+
+      pill.onclick = function () {
+        // If the element is clearable, let the user unselect by clicking on the pill
+        // again. I.e. if this pill (which is clicked) was already selected before, we
+        // unselect it later.
+        let unselect = clearable && pill.classList.contains("selected")
+
+        container.querySelectorAll(".selected").forEach((el) => {
+          el.classList.remove("selected")
+        })
+
+        if (unselect) {
+          // Need to pass a string here and convert it to None on the Python side.
+          // If setting null, the components lib returns the "default" value (=index).
+          Streamlit.setComponentValue("None")
+        } else {
+          container.setAttribute('data-index', `${i}`);
+          Streamlit.setComponentValue(i)
+          pill.classList.add("selected")
+        }
+      }
+    })
 
   // Style according to the app theme.
   if (data.theme) {
@@ -105,3 +105,4 @@ Streamlit.setComponentReady()
 // Finally, tell Streamlit to update our initial height. We omit the
 // `height` parameter here to have it default to our scrollHeight.
 Streamlit.setFrameHeight()
+Streamlit.setComponentValue(0)

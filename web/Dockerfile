@@ -28,7 +28,6 @@ RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/usr python3 -
 
 WORKDIR /app
 COPY pyproject.toml poetry.lock /app/
-RUN ls -l /usr/bin/poetry ; sleep 5
 RUN poetry install
 COPY . .
 COPY --from=st-ymap-component-frontend /frontend/build /app/web/utils/ymap_component/frontend/build
